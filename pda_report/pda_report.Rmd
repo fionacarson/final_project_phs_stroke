@@ -33,6 +33,8 @@ Briefly describe the quality of the data and whether you have any reasons to sug
 ### Ethical issues in data sourcing and extraction
 Do you have any ethical concerns regarding the sourcing and extraction of your data?
 
+Some of the data is labelled "c" which means the data can't be presented as it could result in identification of a single respondent. This was discussed in group project
+
 ### Ethical implications of business requirements
 Are there any ethical implications of the business requirements?
 
