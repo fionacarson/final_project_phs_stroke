@@ -1,0 +1,11 @@
+---
+title: "EDA before cleaning"
+output:
+  html_document:
+    toc: yes
+    toc_float: true
+    toc_depth: '2'
+    highlight: tango
+    df_print: paged
+---
+
