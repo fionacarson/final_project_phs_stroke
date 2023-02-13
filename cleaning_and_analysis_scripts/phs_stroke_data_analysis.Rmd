@@ -1,0 +1,75 @@
+---
+title: "PHS Stroke Data Analysis Project"
+output:
+  html_document:
+    toc: yes
+    toc_float: true
+    toc_depth: '2'
+    highlight: tango
+    df_print: paged
+---
+
+## Assumptions made during cleaning
+
+In the diagnosis column "Cerebrovascular disease" covers everything and is essentially the "All" category. There were originally 3 sub-categories but these didn't add up to the total value under "Cerebrovascular disease". This is because there are some other diagnosis (with ICD codes I62, I65, I66-69) which fall outwith these sub-categories. For this reason a 4th sub-category was created called "Other CVD". 
+
+There were a lot of missing values for Orkney, Shetland and Western Isles due to confidentiality. These were converted to zeros. EXPLAIN WHY
+
+## Assumptions made during analysis
+
+To determine which diagnosis is most the number of diagnosis and number of deaths values were used, rather than the crude rates or easr. It was felt it was more important to know the actual number than a number adjusted for 100,000 of population (crude rate) or age adjusted (easr).
+
+
+```{r}
+library(tidyverse)
+library(here)
+```
+
+```{r}
+source(here("theme_palette_etc/plot_theme.R"))
+```
+
+```{r}
+activity_hb <- read_csv(here("clean_data/activity_hb.csv"))
+
+mortality_hb <- read_csv(here("clean_data/mortality_hb.csv"))
+```
+
+### What is the most common stroke diagnosis in Scotland?
+
+There are two datasets which need analysed to answer this questions - the activity dataset which details the number of discharges and the mortality which details the number of deaths. It should be noted that one patient could have more than one discharge.
+
+The unadultered values are used for this analysis as we are looking for the most common stroke diagnosis which 
+
+```{r}
+activity_hb %>% 
+  filter(hbr == "S92000003" &
+          age == "All" &
+          sex == "All" &
+          admission_type == "All" &
+          diagnosis != "Cerebrovascular Disease") %>% 
+  ggplot(aes(financial_year, number_of_discharges)) +
+  geom_col(aes(fill = diagnosis), position = "dodge") +
+  theme_fc() 
+```
+
+Stroke is by far the most common diagnosis for patients who are discharged. 
+
+```{r}
+mortality_hb %>% 
+  filter(hbr == "S92000003" &
+          age == "All" &
+          sex == "All" &
+          diagnosis != "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, number_of_deaths)) +
+  geom_col(aes(fill = diagnosis), position = "dodge") +
+  theme_fc() 
+```
+
+For the patients that die, stroke is also the most common diagnosis but now the "Other CVD" category is much higher than for patients that are discharged. 
+
+It is not easy to compare the death and discharge figures as they cover different time periods. Discharges are financial year and deaths are calendar year. 
+
+## Are there differences in diagnoses between different demographics?
+
+### Age

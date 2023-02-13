@@ -9,14 +9,14 @@ output:
     df_print: paged
 ---
 
-```{r}
+```{r, message = FALSE}
 library(tidyverse)
 library(here)
 library(janitor)
 library(purrr)
 ```
 
-```{r}
+```{r, message = FALSE}
 mortality_hb <- read_csv(here("raw_data/stroke_mortalitybyhbr.csv")) %>% 
   clean_names()
 
@@ -25,8 +25,42 @@ activity_hb <- read_csv(here("raw_data/stroke_activitybyhbr.csv")) %>%
 ```
 
 ```{r}
-skimr::skim(mortality_hb)
+skimr::skim(activity_hb)
 ```
+
+## Missing Data
+
+Data is missing for confidentiality reasons (it has statistical term "c") because the numbers are so low they would allow identification of individuals. Original plan was to change values to 1 but this is complicated by the fact a lot of the values are derived so, for example, we'd need to change Male and Female to one and then All to 2 and then add this to overall total and Scotland total. 
+All missing data is from orkney, shetland and western isles. 
+3739 missing rows. 
+There is no age group data for these 3 health boards but there is data under age_group = All. 
+
+Let change all NAs to zero, the numbers are clearly low and we can't justifying guessing an actualy number. 
+
+
+```{r}
+activity_hb %>% 
+  filter(is.na(number_of_discharges)) %>%  # 3739
+  filter(is.na(admission_type_qf)) %>% # 2443
+  filter(is.na(age_group_qf)) %>%  # 1782
+  filter(is.na(sex_qf)) # 1092
+```
+
+1092 rows of data will be affected (and these will feed into all the other totals) which isn't ideal but it is over 3 health boards and 13 years. When looking at the data in the graph below it seems there is total data but not data broken down into age groups, 
+
+
+```{r}
+activity_hb %>% 
+  filter(hbr == "S08000028") %>% 
+#  filter(age_group != "All") %>% 
+  group_by(financial_year, sex) %>% 
+  ggplot(aes(financial_year, number_of_discharges)) +
+  geom_col(aes(fill = sex), position = "dodge")
+```
+
+
+
+
 
 ```{r}
 mortality_hb %>% 

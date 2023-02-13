@@ -1,0 +1,302 @@
+---
+title: "EDA after cleaning"
+output:
+  html_document:
+    toc: yes
+    toc_float: true
+    toc_depth: '2'
+    highlight: tango
+    df_print: paged
+---
+
+## Assumptions made during cleaning
+
+In the diagnosis column "Cerebrovascular disease" covers everything and is essentially the "All" category. There were originally 3 sub-categories but these didn't add up to the total value under "Cerebrovascular disease". This is because there are some other diagnosis (with ICD codes I62, I65, I66-69) which fall outwith these sub-categories. For this reason a 4th sub-category was created called "Other CVD". 
+
+There were a lot of missing values for Orkney, Shetland and Western Isles due to confidentiality. These were converted to zeros. 
+
+```{r}
+activity_hb <- read_csv(here("clean_data/activity_hb.csv")) 
+
+mortality_hb <- read_csv(here("clean_data/mortality_hb.csv")) 
+```
+
+```{r}
+activity_hb %>% 
+  select(where(is.character)) %>% 
+  map(unique)
+```
+
+
+
+```{r}
+activity_hb %>% 
+  filter(hbr == "S92000003" &
+           age == "All" &
+           sex == "All" &
+           admission_type == "All") %>% 
+  ggplot(aes(financial_year, number_of_discharges)) +
+  geom_col(aes(fill = diagnosis), position = "dodge")
+```
+
+```{r}
+mortality_hb %>% 
+  filter(hbr == "S92000003" &
+           age == "All" &
+           sex == "All") %>% 
+  ggplot(aes(year, number_of_deaths)) +
+  geom_col(aes(fill = diagnosis), position = "dodge")
+```
+
+```{r, checking 'other cvd' cleaning code worked}
+mortality_hb %>% 
+  filter(hbr == "S92000003" &
+           age == "All" &
+           sex == "All" &
+           diagnosis != "Cerebrovascular Disease") %>% 
+  group_by(year) %>% 
+  summarise(total = sum(number_of_deaths))
+  
+mortality_hb %>% 
+  filter(hbr == "S92000003" &
+           age == "All" &
+           sex == "All" &
+           diagnosis == "Cerebrovascular Disease") %>% 
+  group_by(year) %>% 
+  summarise(total = sum(number_of_deaths))
+```
+
+## Q2 Demographics effect on diagnosis
+### Age - Discharge Data
+
+Look at CVD by age first
+
+```{r}
+activity_hb %>% 
+  filter(hbr == "S92000003",
+         sex == "All",
+         admission_type == "All",
+         !age %in% c("All", "under 75"), 
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(financial_year, number_of_discharges)) +
+  geom_col(aes(fill = age), position = "dodge")
+
+activity_hb %>% 
+  filter(hbr == "S92000003",
+         sex == "All",
+         admission_type == "All",
+         !age %in% c("All", "under 75"), 
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(financial_year, crude_rate)) +
+  geom_col(aes(fill = age), position = "dodge")
+
+activity_hb %>% 
+  filter(hbr == "S92000003",
+         sex == "All",
+         admission_type == "All",
+         !age %in% c("All", "under 75"), 
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(financial_year, easr)) +
+  geom_col(aes(fill = age), position = "dodge")
+```
+
+The crude rate and easr data shows a different pattern than the raw values. The number of discharges for 45-64 year olds and 65-74 years olds is similar but when this is adjusted for 100,000 of population (ie the crude rate) the number of discharges for 65-74 years olds is much higher. This is likely caused by the fact that the younger age range covers 20 years whereas the older one covers 10 years and also there will be fewer people in the older age range because people will have died. 
+
+
+#### Age and diagnosis
+
+```{r}
+activity_hb %>% 
+  filter(hbr == "S92000003",
+         sex == "All",
+         admission_type == "All",
+         !age %in% c("All", "under 75"), 
+         diagnosis != "Cerebrovascular Disease") %>% 
+  ggplot(aes(financial_year, number_of_discharges)) +
+  geom_col(aes(fill = age), position = "dodge") +
+  facet_wrap(~diagnosis, scales = "free_y")
+
+activity_hb %>% 
+  filter(hbr == "S92000003",
+         sex == "All",
+         admission_type == "All",
+         !age %in% c("All", "under 75"), 
+         diagnosis != "Cerebrovascular Disease") %>% 
+  ggplot(aes(financial_year, crude_rate)) +
+  geom_col(aes(fill = age), position = "dodge") +
+  facet_wrap(~diagnosis, scales = "free_y")
+
+activity_hb %>% 
+  filter(hbr == "S92000003",
+         sex == "All",
+         admission_type == "All",
+         !age %in% c("All", "under 75"), 
+         diagnosis != "Cerebrovascular Disease") %>% 
+  ggplot(aes(financial_year, easr)) +
+  geom_col(aes(fill = age), position = "dodge") +
+  facet_wrap(~diagnosis, scales = "free_y")
+```
+
+Even after age adjustment subarachnoid haemorrhage has a different pattern to the other diagnoses. The other conditions show a distinct age related trend, with more discharges as age increases. Subarachnoid haemorrhage shows similar levels of discharge across all three age groups over 45. 
+
+
+Same data below but displayed differently. The plots faceted on diagnosis (as above) are more informative
+
+```{r}
+activity_hb %>% 
+  filter(hbr == "S92000003",
+         sex == "All",
+         admission_type == "All",
+         !age %in% c("All", "under 75"), 
+         diagnosis != "Cerebrovascular Disease") %>% 
+  ggplot(aes(financial_year, number_of_discharges)) +
+  geom_col(aes(fill = diagnosis), position = "dodge") +
+  facet_wrap(~age, scales = "free_y")
+```
+
+### Sex - Discharge Data
+
+```{r}
+activity_hb %>% 
+  filter(hbr == "S92000003",
+         sex != "All",
+         admission_type == "All",
+         age == "All", 
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(financial_year, number_of_discharges)) +
+  geom_col(aes(fill = sex), position = "dodge")
+
+activity_hb %>% 
+  filter(hbr == "S92000003",
+         sex != "All",
+         admission_type == "All",
+         age == "All", 
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(financial_year, crude_rate)) +
+  geom_col(aes(fill = sex), position = "dodge")
+
+activity_hb %>% 
+  filter(hbr == "S92000003",
+         sex != "All",
+         admission_type == "All",
+         age == "All", 
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(financial_year, easr)) +
+  geom_col(aes(fill = sex), position = "dodge")
+```
+
+
+
+```{r}
+activity_hb %>% 
+  filter(hbr == "S92000003",
+         sex != "All",
+         admission_type == "All",
+         age == "All", 
+         diagnosis != "Cerebrovascular Disease") %>% 
+  ggplot(aes(financial_year, number_of_discharges)) +
+  geom_col(aes(fill = sex), position = "dodge") +
+  facet_wrap(~diagnosis, scales = "free_y")
+
+activity_hb %>% 
+  filter(hbr == "S92000003",
+         sex != "All",
+         admission_type == "All",
+         age == "All", 
+         diagnosis != "Cerebrovascular Disease") %>% 
+  ggplot(aes(financial_year, crude_rate)) +
+  geom_col(aes(fill = sex), position = "dodge") +
+  facet_wrap(~diagnosis, scales = "free_y")
+
+activity_hb %>% 
+  filter(hbr == "S92000003",
+         sex != "All",
+         admission_type == "All",
+         age == "All", 
+         diagnosis != "Cerebrovascular Disease") %>% 
+  ggplot(aes(financial_year, easr)) +
+  geom_col(aes(fill = sex), position = "dodge") +
+  facet_wrap(~diagnosis, scales = "free_y")
+```
+
+### Age - Mortality Data
+
+```{r}
+mortality_hb %>% 
+  filter(hbr == "S92000003",
+         sex == "All",
+         !age %in% c("All", "under 75"), 
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, number_of_deaths)) +
+  geom_col(aes(fill = age), position = "dodge")
+
+mortality_hb %>% 
+  filter(hbr == "S92000003",
+         sex == "All",
+         !age %in% c("All", "under 75"), 
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, crude_rate)) +
+  geom_col(aes(fill = age), position = "dodge")
+
+mortality_hb %>% 
+  filter(hbr == "S92000003",
+         sex == "All",
+         !age %in% c("All", "under 75"), 
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, easr)) +
+  geom_col(aes(fill = age), position = "dodge")
+```
+
+```{r}
+mortality_hb %>% 
+  filter(hbr == "S92000003",
+         sex == "All",
+         !age %in% c("All", "under 75"), 
+         diagnosis != "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, number_of_deaths)) +
+  geom_col(aes(fill = age), position = "dodge") +
+  facet_wrap(~diagnosis, scales = "free_y", nrow = 2)
+```
+
+
+
+
+### Sex - Mortality Data
+
+```{r}
+mortality_hb %>% 
+  filter(hbr == "S92000003",
+         sex != "All",
+         age == "All", 
+         diagnosis == "Stroke") %>% 
+  ggplot(aes(year, number_of_deaths)) +
+  geom_col(aes(fill = sex), position = "dodge")
+
+mortality_hb %>% 
+  filter(hbr == "S92000003",
+         sex != "All",
+         age == "All", 
+         diagnosis == "Stroke") %>% 
+  ggplot(aes(year, crude_rate)) +
+  geom_col(aes(fill = sex), position = "dodge")
+
+mortality_hb %>% 
+  filter(hbr == "S92000003",
+         sex != "All",
+         age == "All", 
+         diagnosis == "Stroke") %>% 
+  ggplot(aes(year, easr)) +
+  geom_col(aes(fill = sex), position = "dodge")
+```
+
+```{r}
+mortality_hb %>% 
+  filter(hbr == "S92000003",
+         sex != "All",
+         !age %in% c("All", "under 75"), 
+         diagnosis != "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, number_of_deaths)) +
+  geom_col(aes(fill = sex), position = "dodge") +
+  facet_wrap(~diagnosis, scales = "free_y", nrow = 2)
+```
+
