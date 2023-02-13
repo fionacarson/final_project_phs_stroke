@@ -66,7 +66,7 @@ mortality_hb %>%
   summarise(total = sum(number_of_deaths))
 ```
 
-## Q2 Demographics effect on diagnosis
+## Q2 Demographics effect on diagnosis (just activity data)
 ### Age - Discharge Data
 
 Look at CVD by age first
@@ -219,6 +219,101 @@ activity_hb %>%
   facet_wrap(~diagnosis, scales = "free_y")
 ```
 
+
+## Investigation into combining datasets
+
+Mortality is the simpler and shorter dataset but it is already by year which is what we want, so lets try butchering the activity dataset. 
+
+```{r}
+activity_hb_by_cal_year <- activity_hb %>% 
+  mutate(number_of_discharges_75pc = 0.75 * number_of_discharges,
+         number_of_discharges_25pc = 0.25 * number_of_discharges, .before = hbr) %>% 
+  arrange(hbr, admission_type, age, sex, diagnosis) %>% 
+  mutate(year = str_extract(financial_year, "^[0-9]{4}"), .after = financial_year) %>% 
+  mutate(year_num_discharges = number_of_discharges_75pc + lag(number_of_discharges_25pc),
+         .before = hbr) %>% 
+  select(-c(number_of_discharges_75pc, number_of_discharges_25pc)) %>% 
+# remove all 2009 rows as these will be created by adding 2021 data. 
+  filter(year != 2009)
+  
+```
+
+The plots below compare the newly created calendar year data and original data and there isn't much difference. 
+
+```{r}
+activity_hb_by_cal_year %>% 
+  filter(hbr == "S92000003" &
+           age == "All" &
+           sex == "All" &
+           admission_type == "All") %>% 
+  ggplot(aes(financial_year, number_of_discharges)) +
+  geom_col(aes(fill = diagnosis), position = "dodge")
+
+
+activity_hb_by_cal_year %>% 
+  filter(hbr == "S92000003" &
+           age == "All" &
+           sex == "All" &
+           admission_type == "All") %>% 
+  ggplot(aes(year, year_num_discharges)) +
+  geom_col(aes(fill = diagnosis), position = "dodge")
+
+```
+Checking further plots - by age
+
+```{r}
+activity_hb %>% 
+  filter(hbr == "S92000003",
+         sex == "All",
+         admission_type == "All",
+         !age %in% c("All", "under 75"), 
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(financial_year, number_of_discharges)) +
+  geom_col(aes(fill = age), position = "dodge")
+
+activity_hb_by_cal_year %>% 
+  filter(hbr == "S92000003",
+         sex == "All",
+         admission_type == "All",
+         !age %in% c("All", "under 75"), 
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, year_num_discharges)) +
+  geom_col(aes(fill = age), position = "dodge")
+```
+
+Again this looks good so I think the code has done what I want. Now how to add in mortality data?
+
+```{r}
+# Filter activity data on admission type = all as mortality data doesn't have 
+# admission type. 
+
+combined_by_cal_year <- activity_hb_by_cal_year %>% 
+  filter(admission_type == "All") %>% 
+  mutate(year = as.numeric(year)) %>% 
+  left_join(mortality_hb, by = c("year", "hbr", "age", "sex", "diagnosis"))
+
+
+
+```
+
+Ok so this works but not sure whether it is valid - also still need to convert crude rate and easr.  
+
+
+## Q4 Any differences in mortality rates for different types of strokes? Does this vary with demographcis. 
+
+
+```{r}
+mortality_hb %>% 
+  filter(hbr == "S92000003",
+         sex == "All",
+         age == "All", 
+         diagnosis != "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, number_of_deaths)) +
+  geom_col(aes(fill = diagnosis), position = "dodge")
+```
+
+
+
 ### Age - Mortality Data
 
 ```{r}
@@ -247,6 +342,8 @@ mortality_hb %>%
   geom_col(aes(fill = age), position = "dodge")
 ```
 
+Mortality follows a distinct age related trend, with number of deaths increasing with age. 
+
 ```{r}
 mortality_hb %>% 
   filter(hbr == "S92000003",
@@ -254,6 +351,24 @@ mortality_hb %>%
          !age %in% c("All", "under 75"), 
          diagnosis != "Cerebrovascular Disease") %>% 
   ggplot(aes(year, number_of_deaths)) +
+  geom_col(aes(fill = age), position = "dodge") +
+  facet_wrap(~diagnosis, scales = "free_y", nrow = 2)
+
+mortality_hb %>% 
+  filter(hbr == "S92000003",
+         sex == "All",
+         !age %in% c("All", "under 75"), 
+         diagnosis != "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, crude_rate)) +
+  geom_col(aes(fill = age), position = "dodge") +
+  facet_wrap(~diagnosis, scales = "free_y", nrow = 2)
+
+mortality_hb %>% 
+  filter(hbr == "S92000003",
+         sex == "All",
+         !age %in% c("All", "under 75"), 
+         diagnosis != "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, easr)) +
   geom_col(aes(fill = age), position = "dodge") +
   facet_wrap(~diagnosis, scales = "free_y", nrow = 2)
 ```

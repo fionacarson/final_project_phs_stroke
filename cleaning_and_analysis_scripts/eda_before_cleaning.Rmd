@@ -24,6 +24,7 @@ activity_hb <- read_csv(here("raw_data/stroke_activitybyhbr.csv")) %>%
   clean_names()
 ```
 
+
 ```{r}
 skimr::skim(activity_hb)
 ```
@@ -59,15 +60,6 @@ activity_hb %>%
 ```
 
 
-
-
-
-```{r}
-mortality_hb %>% 
-  select(where(is.character)) %>% 
-  map(unique)
-```
-
 ```{r}
 activity_hb %>% 
   select(where(is.character)) %>% 
@@ -75,20 +67,11 @@ activity_hb %>%
 ```
 
 
-```{r}
-activity_hb %>% 
-  filter(hbr == "S92000003" &
-           age_group == "All" &
-           sex == "All" &
-           admission_type == "All") %>% 
-  ggplot(aes(financial_year, number_of_discharges)) +
-  geom_col(aes(fill = diagnosis), position = "dodge")
-```
 
 ```{r}
 mortality_hb %>% 
   filter(hbr == "S92000003" &
-           age_group == "All" &
+           age == "All" &
            sex == "All") %>% 
   ggplot(aes(year, number_of_deaths)) +
   geom_col(aes(fill = diagnosis), position = "dodge")
@@ -97,38 +80,14 @@ mortality_hb %>%
 ```{r}
 mortality_hb %>% 
   filter(!hbr == "S92000003" &
-           age_group == "All" &
+           age == "All" &
            sex == "All") %>% 
   ggplot(aes(year, number_of_deaths)) +
   geom_col(aes(fill = diagnosis), position = "dodge") +
   facet_wrap(~hbr)
 ```
 
-```{r}
-mortality_hb_2022 <- read_csv(here("raw_data/stroke_mortalitybyhbr_up_to_2022.csv")) %>% 
-  clean_names()
 
-activity_hb_2022 <- read_csv(here("raw_data/stroke_activitybyhbr_up_to_2022.csv")) %>% 
-  clean_names()
-
-
-```
-
-```{r}
-activity_hb_2022 %>% 
-  filter(hbr == "S92000003" &
-           age_group == "All" &
-           sex == "All" &
-           admission_type == "All") %>% 
-  ggplot(aes(financial_year, number_of_discharges)) +
-  geom_col(aes(fill = diagnosis), position = "dodge")
-```
-
-```{r}
-activity_hb_2022 %>% 
-  select(where(is.character)) %>% 
-  map(unique)
-```
 
 Original activity file goes up to 2018/2019. We now have data for 2019/2020, 2020/2021 and 2021/2022 - three extra years. Lets filter and find out how many rows this is. 
 
@@ -166,68 +125,45 @@ activity %>%
 ```
 
 
+
+
+## Mortality
+
 ```{r}
-other_cvd <- activity %>% 
-  filter(!diagnosis == "Cerebrovascular Disease") %>% 
-  group_by(financial_year, hbr, admission_type, age_group, sex) %>% 
-  summarise(number_of_discharges_other_cvd = sum(number_of_discharges),
-            crude_rate_other_cvd = sum(crude_rate),
-            easr_other_cvd = sum(easr)) %>% 
-  mutate(diagnosis = "Other CVD", .after = sex) 
+mortality_hb %>% 
+  select(where(is.character)) %>% 
+  map(unique)
+```
+
+
+```{r}
+skimr::skim(mortality_hb)
+```
+
+```{r}
+mortality_hb %>% 
+  filter(hbr == "S08000025" &
+           age == "All" 
+ #          sex == "All"
+   ) %>% 
+  ggplot(aes(year, number_of_deaths)) +
+  geom_col(aes(fill = sex), position = "dodge")
+```
+
+The data for Orkney, Shetland and WI is split by sex but no age data
+
+
+## Investigation into combining datasets
+
+Mortality is the simpler and shorter dataset but it is already by year which is what we want, so lets try butchering the activity dataset. 
+
+```{r}
+activity_hb %>% 
+  mutate(number_of_discharges_75pc = 0.75 * number_of_discharges,
+         number_of_discharges_25pc = 0.25 * number_of_discharges) %>% 
+  arrange(hbr, admission_type, age, sex, diagnosis) %>% 
+  mutate(year = str_extract(financial_year, "^[0-9]{4}"), .after = financial_year)
   
-
-cvd_only <- activity %>% 
-  filter(diagnosis == "Cerebrovascular Disease")
-```
-
-```{r}
-all <- left_join(other_cvd, cvd_only, by = 
-            c("financial_year", "hbr", "admission_type", "age_group", "sex"))
-
-all <- all %>% 
-  mutate(number_of_discharges = number_of_discharges - number_of_discharges_other_cvd,
-         crude_rate = crude_rate - crude_rate_other_cvd, 
-         easr = easr - easr_other_cvd) %>% 
-  select(-ends_with("cvd"), -diagnosis.y) %>% 
-  rename(diagnosis = diagnosis.x)
-```
-
-
-
-
-```{r}
-activity <- activity %>% 
-  select(!ends_with("qf"))
-```
-
-
-```{r}
-new_activity <- bind_rows(activity, all)
-```
-
-```{r}
-new_activity %>% 
-  filter(hbr == "S92000003" &
-           age_group == "All" &
-           sex == "All" &
-           admission_type == "All") %>% 
-  ggplot(aes(financial_year, number_of_discharges)) +
-  geom_col(aes(fill = diagnosis), position = "dodge")
-```
-
-```{r}
-new_activity %>% 
-    filter(hbr == "S92000003" &
-           age_group == "All" &
-           sex == "All" &
-           admission_type == "All") %>% 
-  filter(!diagnosis == "Cerebrovascular Disease") %>% 
-  group_by(financial_year, hbr, admission_type, age_group, sex) %>% 
-  summarise(total = sum(number_of_discharges)) %>% 
-    ggplot(aes(financial_year, total)) +
-  geom_col()
-
-
-
+  
 ```
 
