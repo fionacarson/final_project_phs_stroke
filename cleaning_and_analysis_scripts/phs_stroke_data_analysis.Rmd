@@ -11,7 +11,9 @@ output:
 
 ## Assumptions made during cleaning
 
-In the diagnosis column "Cerebrovascular disease" covers everything and is essentially the "All" category. There were originally 3 sub-categories but these didn't add up to the total value under "Cerebrovascular disease". This is because there are some other diagnosis (with ICD codes I62, I65, I66-69) which fall outwith these sub-categories. For this reason a 4th sub-category was created called "Other CVD". 
+For activity data the diagnosis column "Cerebrovascular disease" covers everything and is essentially the "All" category. There were originally 3 sub-categories but these didn't add up to the total value under "Cerebrovascular disease". This is because there are some other diagnosis (with ICD codes I62, I65, I66-69) which fall outwith these sub-categories. For this reason a 4th sub-category was created called "Other CVD". 
+
+For the mortality data, "TIAs and related syndromes" are included in the "Cerebrovascular disease" category and not separated out. 
 
 There were a lot of missing values for Orkney, Shetland and Western Isles due to confidentiality. These were converted to zeros. EXPLAIN WHY
 

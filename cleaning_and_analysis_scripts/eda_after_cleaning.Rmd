@@ -299,7 +299,15 @@ combined_by_cal_year <- activity_hb_by_cal_year %>%
 Ok so this works but not sure whether it is valid - also still need to convert crude rate and easr.  
 
 
+## Q3 Cases by health board vs by local authority
+
+
+
+
+
 ## Q4 Any differences in mortality rates for different types of strokes? Does this vary with demographcis. 
+
+I think the questions are a bit mixed up and it might be better to present them in a different way. In question 2 it talks about stroke diagnoses when I think it means discharges. 
 
 
 ```{r}

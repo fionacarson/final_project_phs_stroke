@@ -152,18 +152,33 @@ mortality_hb %>%
 
 The data for Orkney, Shetland and WI is split by sex but no age data
 
-
-## Investigation into combining datasets
-
-Mortality is the simpler and shorter dataset but it is already by year which is what we want, so lets try butchering the activity dataset. 
+## Local Authority Data
 
 ```{r}
-activity_hb %>% 
-  mutate(number_of_discharges_75pc = 0.75 * number_of_discharges,
-         number_of_discharges_25pc = 0.25 * number_of_discharges) %>% 
-  arrange(hbr, admission_type, age, sex, diagnosis) %>% 
-  mutate(year = str_extract(financial_year, "^[0-9]{4}"), .after = financial_year)
-  
-  
+activity_ca <- read_csv(here("raw_data/stroke_activitybyca.csv"))
 ```
 
+```{r}
+skimr::skim(activity_ca)
+```
+
+Huge amount of discharge data missing. Need to find out what this is for. 
+
+
+```{r}
+activity_ca %>% 
+  select(where(is.character)) %>% 
+  map(unique)
+
+
+```
+
+All the missing Number of Discharges are for confidential reasons. 
+
+```{r}
+activity_ca %>% 
+  filter(is.na(NumberOfDischarges)) %>% 
+  distinct(CA)
+```
+
+Looks like lots of the council areas have missing values. 
