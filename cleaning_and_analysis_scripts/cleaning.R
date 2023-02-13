@@ -118,6 +118,26 @@ activity_hb <- activity_hb %>%
   mutate(crude_rate = round(crude_rate, 0),
          easr = round(easr, 1))
 
+# Adding health board names into dataset to make analysis more intuitive
+activity_hb <- activity_hb %>% 
+  mutate(hbr_name = case_when(
+    hbr == "S92000003" ~ "Scotland", 
+    hbr == "S08000015" ~ "Ayrshire & Arran", 
+    hbr == "S08000016" ~ "Borders", 
+    hbr == "S08000017" ~ "Dumfries & Galloway",
+    hbr == "S08000019" ~ "Forth Valley",
+    hbr == "S08000020" ~ "Grampian", 
+    hbr == "S08000022" ~ "Highland", 
+    hbr == "S08000024" ~ "Lothian", 
+    hbr == "S08000025" ~ "Orkney", 
+    hbr == "S08000026" ~ "Shetland",
+    hbr == "S08000028" ~ "Western Isles",
+    hbr == "S08000029" ~ "Fife",
+    hbr == "S08000030" ~ "Tayside",
+    hbr == "S08000031" ~ "Greater Glasgow & Clyde",
+    hbr == "S08000032" ~ "Lanarkshire"
+  ), .after = hbr)
+
 write_csv(activity_hb, "clean_data/activity_hb.csv")
 
 # mortality by health board ------------------------------------------------------------
@@ -180,6 +200,25 @@ mortality_other_cvd <- mortality_other_cvd %>%
 mortality_hb <- bind_rows(mortality_hb, mortality_other_cvd)
 
 rm(mortality_other_cvd, mortality_stroke_TIA_haemorrhage, mortality_cvd_only)
+
+mortality_hb <- mortality_hb %>% 
+  mutate(hbr_name = case_when(
+    hbr == "S92000003" ~ "Scotland", 
+    hbr == "S08000015" ~ "Ayrshire & Arran", 
+    hbr == "S08000016" ~ "Borders", 
+    hbr == "S08000017" ~ "Dumfries & Galloway",
+    hbr == "S08000019" ~ "Forth Valley",
+    hbr == "S08000020" ~ "Grampian", 
+    hbr == "S08000022" ~ "Highland", 
+    hbr == "S08000024" ~ "Lothian", 
+    hbr == "S08000025" ~ "Orkney", 
+    hbr == "S08000026" ~ "Shetland",
+    hbr == "S08000028" ~ "Western Isles",
+    hbr == "S08000029" ~ "Fife",
+    hbr == "S08000030" ~ "Tayside",
+    hbr == "S08000031" ~ "Greater Glasgow & Clyde",
+    hbr == "S08000032" ~ "Lanarkshire"
+  ), .after = hbr)
 
 write_csv(mortality_hb, "clean_data/mortality_hb.csv")
 
@@ -245,6 +284,16 @@ activity_ca <- activity_ca %>%
   mutate(crude_rate = round(crude_rate, 0),
          easr = round(easr, 1))
 
+council_area_names <- read_csv(here("downloads/council_area_codes.csv")) %>% 
+  clean_names()
+
+council_area_names_clean <- council_area_names %>% 
+  filter(is.na(ca_date_archived),
+         is.na(hb_date_archived)) %>% 
+  select(-contains("date"), -starts_with("hscp"), -country)
+
+activity_ca <- left_join(activity_ca, council_area_names_clean, by = "ca")
+
 write_csv(activity_ca, "clean_data/activity_ca.csv")
 
 # mortality by council area ------------------------------------------------------------
@@ -300,5 +349,7 @@ mortality_other_cvd <- mortality_other_cvd %>%
 mortality_ca <- bind_rows(mortality_ca, mortality_other_cvd)
 
 rm(mortality_other_cvd, mortality_stroke_TIA_haemorrhage, mortality_cvd_only)
+
+mortality_ca <- left_join(mortality_ca, council_area_names_clean, by = "ca")
 
 write_csv(mortality_ca, "clean_data/mortality_ca.csv")
