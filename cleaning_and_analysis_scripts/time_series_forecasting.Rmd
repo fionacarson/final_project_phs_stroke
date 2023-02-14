@@ -13,11 +13,13 @@ output:
 
 ```{r}
 library(tidyverse)
+library(here)
+library(janitor)
 library(fastDummies)
 library(GGally)
 library(ggfortify)
 library(modelr)
-library(relaimpo)
+#library(relaimpo)
 library(glmulti)
 ```
 
@@ -757,13 +759,190 @@ Genetic model would'nt converge and exhaustive model took ages (could maybe leav
 
  number_of_discharges~1+start_fin_year+hbr_name_borders+hbr_name_dumfries_galloway+hbr_name_greater_glasgow_clyde+hbr_name_lanarkshire+hbr_name_lothian+hbr_name_orkney+hbr_name_shetland+hbr_name_western_isles+admission_type_emergency+admission_type_transfer+age_45_64+age_65_74+age_over_75+diagnosis_stroke+diagnosis_subarachnoid_haemorrhage
 
-
+Try glmulti without health board variables
  
 ```{r}
+activity_without_hb <- activity_hb_for_glmulti %>% 
+  select(-starts_with("hbr_name"))
 
+
+glmulti_fit <- glmulti(
+  number_of_discharges ~ ., 
+  data = activity_without_hb,
+  level = 1, # 2 = include pairwise interactions, 1 = main effects only (main effect = no pairwise interactions)
+  minsize = 0, # no min size of model
+  maxsize = -1, # -1 = no max size of model
+  marginality = TRUE, # marginality here means the same as 'strongly hierarchical' interactions, i.e. include pairwise interactions only if both predictors present in the model as main effects.
+  method = "g", # the problem is too large for exhaustive search, so search using a genetic algorithm
+  crit = bic, # criteria for model selection is BIC value (lower is better)
+  plotty = FALSE, # don't plot models as function runs
+  report = TRUE, # do produce reports as function runs
+  confsetsize = 100, # return best 100 solutions
+  fitfunction = lm # fit using the `lm` function
+)
 ```
  
+```{r}
+best_model_glmulti_genetic <- glmulti_fit@objects[[1]]
+
+
+best_model_glmulti_genetic$terms[[3]]
+```
+
  
+ model16 <- lm(number_of_discharges ~ 
+               diagnosis_stroke + 
+               hbr_name_greater_glasgow_clyde +
+               age_over_75 +
+               admission_type_transfer +
+               admission_type_emergency +
+               hbr_name_lanarkshire +
+               hbr_name_lothian +
+               hbr_name_western_isles +
+               hbr_name_orkney +
+               hbr_name_shetland +
+                age_65_74 +
+                age_45_64 +
+                hbr_name_borders +
+                hbr_name_dumfries_galloway +
+                diagnosis_subarachnoid_haemorrhage +
+                start_fin_year,
+               data = activity_hb_dummy)
+               
+               
+               
+```{r}
+glmulti_model <- lm(number_of_discharges ~
+                      1 + start_fin_year + 
+                      admission_type_emergency + 
+                      admission_type_transfer + 
+                      age_45_64 + age_65_74 + age_over_75 + 
+                      diagnosis_stroke + 
+                      diagnosis_subarachnoid_haemorrhage,
+                    data = activity_without_hb)
+```
+    
+```{r}
+summary(glmulti_model)
+```
  
- 
- 
+This model is not as good as the one with health boards so health boards are helping.
+
+
+## Further Analysis
+
+```{r}
+activity_hb_for_fitting %>% 
+  ggplot(aes(start_fin_year, number_of_discharges)) +
+  geom_point(aes(colour = diagnosis, shape = age)) 
+```
+
+## Not using dummy variables
+
+```{r}
+activity_hb_no_dummies <- activity_hb_for_fitting %>% 
+  mutate_if(is.character, as.factor) %>% 
+  select(-crude_rate, -easr) 
+```
+
+```{r, message = FALSE}
+ggpairs(activity_hb_no_dummies, progress = FALSE)
+```
+
+This isn't telling us anything. Let's just build a model with all variables. 
+
+```{r}
+modelA <- lm(number_of_discharges ~ ., data = activity_hb_no_dummies)
+
+summary(modelA)
+```
+
+This model back up our manual model well! Everything that we chose not to add to our manual model has a high p-value. 
+
+#### Prediction 1
+
+```{r}
+year <- 2020
+hbr_nameDumfries_Galloway <- -13.8998
+age65_74 <- 17.5163
+diagnosisStroke <- 52.3219
+admission_typeTransfer <- 36.0120
+sexMale <- -0.6597
+
+
+prediction1 <- -1286.5535 + (0.6246 * year) + hbr_nameDumfries_Galloway +
+  age65_74 + diagnosisStroke + admission_typeTransfer + sexMale
+  
+prediction1
+
+```
+
+```{r}
+activity_hb_no_dummies %>% 
+  filter(hbr_name == "Dumfries & Galloway") %>% 
+  filter(age == "65-74") %>% 
+#  filter(start_fin_year == 2020) %>% 
+  filter(diagnosis == "Stroke") %>% 
+  filter(admission_type == "Transfer") %>% 
+  filter(sex == "Male") %>% 
+  ggplot(aes(start_fin_year, number_of_discharges)) +
+  geom_point()
+
+
+```
+
+```{r}
+activity_hb_no_dummies %>% 
+  add_predictions(modelA) %>% 
+  group_by(start_fin_year) %>% 
+  summarise(total_discharges = sum(number_of_discharges),
+            total_pred = sum(pred)) %>% 
+  ggplot() +
+  geom_point(mapping = aes(start_fin_year, total_discharges)) +
+  geom_point(mapping = aes(start_fin_year, total_pred, colour = "red"))
+```
+
+```{r}
+activity_hb_no_dummies %>% 
+  add_predictions(modelA) %>% 
+  filter(hbr_name == "Dumfries & Galloway") %>% 
+  group_by(start_fin_year) %>% 
+  summarise(total_discharges = sum(number_of_discharges),
+            total_pred = sum(pred)) %>% 
+  ggplot() +
+  geom_point(mapping = aes(start_fin_year, total_discharges)) +
+  geom_point(mapping = aes(start_fin_year, total_pred, colour = "red"))
+```
+
+```{r}
+activity_hb_dummy %>% 
+  add_predictions(model16) %>% 
+  group_by(start_fin_year) %>% 
+  summarise(total_discharges = sum(number_of_discharges),
+            total_pred = sum(pred)) %>% 
+  ggplot() +
+  geom_point(mapping = aes(start_fin_year, total_discharges)) +
+  geom_point(mapping = aes(start_fin_year, total_pred, colour = "red"))
+```
+
+```{r}
+activity_hb_dummy %>% 
+  add_predictions(model16) %>% 
+  filter(hbr_name_greater_glasgow_clyde == 1) %>% 
+  group_by(start_fin_year) %>% 
+  summarise(total_discharges = sum(number_of_discharges),
+            total_pred = sum(pred)) %>% 
+  ggplot() +
+  geom_point(mapping = aes(start_fin_year, total_discharges)) +
+  geom_point(mapping = aes(start_fin_year, total_pred, colour = "red"))
+```
+
+
+
+```{r}
+activity_hb_dummy %>% 
+  add_predictions(model16) %>% 
+  ggplot(aes(number_of_discharges, pred)) +
+  geom_point()
+```
+

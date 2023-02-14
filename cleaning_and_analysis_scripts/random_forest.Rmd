@@ -1,0 +1,276 @@
+---
+title: "Random Forest"
+output:
+  html_document:
+    toc: yes
+    toc_float: true
+    toc_depth: '2'
+    highlight: tango
+    df_print: paged
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(ranger)
+```
+
+```{r}
+activity_hb <- read_csv(here("clean_data/activity_hb.csv")) 
+
+activity_hb_for_fitting <- activity_hb %>% 
+  mutate(start_fin_year = as.numeric(str_extract(financial_year, "^[0-9]{4}")), 
+         .after = financial_year) %>% 
+  select(-financial_year, -hbr) %>% 
+  # Remove all rows which are combinations of other rows
+  filter(hbr_name != "Scotland",
+         admission_type != "All",
+         !age %in% c("All", "under 75"),
+         sex != "All",
+         diagnosis != "Cerebrovascular Disease") %>% 
+  select(-crude_rate, -easr)
+```
+
+
+## Random Forest - Method 1 - Ranger
+
+
+```{r}
+rf_classifier1 <- ranger(number_of_discharges ~ ., 
+                        data = activity_hb_for_fitting, 
+                        importance = "impurity", 
+                        num.trees = 1000, 
+                        mtry = 2, 
+                        min.node.size = 5)
+
+rf_classifier1
+```
+
+
+```{r}
+rf_classifier2 <- ranger(number_of_discharges ~ ., 
+                        data = activity_hb_for_fitting, 
+                        importance = "impurity", 
+                        num.trees = 5000, 
+                        mtry = 3, 
+                        min.node.size = 5)
+
+rf_classifier2
+```
+
+Increasing trees from 1000 to 5000 doesn't change much 
+Increasing mtry to 3 (from 2) MSE has gone down (from 800ist to 286) and r2 has gone up from 0.8 to 0.93
+
+
+
+```{r}
+importance(rf_classifier1)
+```
+
+Diagnosis and health board have the highest values
+
+
+
+```{r}
+activity_test_pred1 <- activity_test_no_discharge_data %>%
+  mutate(pred = predict(rf_classifier1, data = activity_test_no_discharge_data)$predictions)
+```
+
+```{r}
+activity_test_pred1 <- left_join(activity_test_pred1, activity_test, 
+          by = c("start_fin_year", "hbr_name", "admission_type", "age", "sex",
+                 "diagnosis"))
+
+
+activity_test_pred1 %>% 
+  ggplot(aes(number_of_discharges, pred)) + 
+  geom_point(aes(colour = hbr_name))
+```
+
+```{r}
+activity_test_pred2 <- activity_test %>%
+  mutate(pred = predict(rf_classifier2, data = activity_test)$predictions)
+```
+
+```{r}
+activity_test_pred2 %>% 
+  ggplot(aes(number_of_discharges, pred)) + 
+  geom_point(aes(colour = hbr_name))
+```
+
+Can see that results are a lot tighter with mtry = 3
+Lets push it to 4
+
+```{r}
+rf_classifier4 <- ranger(number_of_discharges ~ ., 
+                        data = activity_train, 
+                        importance = "impurity", 
+                        num.trees = 5000, 
+                        mtry = 4, 
+                        min.node.size = 5)
+
+rf_classifier4
+```
+
+mtry = 4 gives MSE 141 and R2 0.97
+
+
+```{r}
+rf_classifier5 <- ranger(number_of_discharges ~ ., 
+                        data = activity_hb_for_fitting, 
+                        importance = "impurity", 
+                        num.trees = 5000, 
+                        mtry = 5, 
+                        min.node.size = 5)
+
+rf_classifier5
+```
+
+Wow, still moving in the right direction.
+
+```{r}
+rf_classifier6 <- ranger(number_of_discharges ~ ., 
+                        data = activity_train, 
+                        importance = "impurity", 
+                        num.trees = 5000, 
+                        mtry = 6, 
+                        min.node.size = 5)
+
+rf_classifier6
+```
+
+Starting to go in wrong direction now - looks like mtry = 5 is best for now. 
+
+
+```{r}
+activity_test_pred5 <- activity_test %>%
+  mutate(pred = predict(rf_classifier5, data = activity_test)$predictions)
+```
+
+```{r}
+activity_test_pred5 %>% 
+  ggplot(aes(number_of_discharges, pred)) + 
+  geom_point(aes(colour = hbr_name))
+```
+
+Looks nice - feels too good to be true!! Need to read more about this to understand it and how it can be used for prediction. 
+Need to check its not because the number_of_discharges column is left in the test set. Did a quick test and removing discharge column from test data makes no difference. 
+
+### Trying to predict on future years
+
+Create a fake dataset and give it random years?
+
+```{r}
+# Sampling 100 random rows from training data
+test_sample <- activity_hb_for_fitting[sample(nrow(activity_hb_for_fitting), 
+                                              100), ]
+
+# Removing results column  
+test_sample_no_discharge <- test_sample %>% 
+  select(-number_of_discharges)
+
+x <- rep(c(2023, 2015, 2022, 2027, 2012), times = c(20, 20, 20, 20, 20))
+
+# Replacing year column with fake data
+test_sample_no_discharge <- test_sample_no_discharge %>% 
+  mutate(start_fin_year = x)
+
+```
+
+
+```{r}
+results <- test_sample_no_discharge %>%
+  mutate(pred = predict(rf_classifier5, 
+                        data = test_sample_no_discharge)$predictions)
+
+results
+```
+
+But how on earth do we know what this is doing? Is it right?
+Can find the data we already know 2015 and 2012 but the model has already seen this data. 
+
+
+## Random Forest Method 2
+
+https://www.listendata.com/2014/11/random-forest-with-r.html#:~:text=Random%20Forest%20is%20one%20of,(i.e.%20categorical%20target%20variable).
+
+```{r}
+library(randomForest)
+```
+
+```{r}
+rf <- randomForest(number_of_discharges ~ ., 
+                   data = activity_hb_for_fitting,
+                   ntree = 500)
+```
+
+```{r}
+print(rf)
+```
+
+```{r}
+mtry <- tuneRF(activity_hb_for_fitting[-7],
+               activity_hb_for_fitting$number_of_discharges,
+               ntreeTry = 500,
+               stepFactor = 1.5, 
+               improve = 0.01,
+               trace = TRUE,
+               plot = TRUE)
+
+best_m <- mtry[mtry[,2] == min(mtry[,2]), 1]
+
+print(mtry)
+print(best_m)
+
+```
+
+
+```{r}
+rf <- randomForest(number_of_discharges ~ ., 
+                   data = activity_hb_for_fitting,
+                   ntree = 500,
+                   mtry = best_m,
+                   importance = TRUE)
+
+print(rf)
+
+importance(rf)
+varImpPlot(rf)
+```
+
+diagnosis, age and hbr name are the most important variables
+
+## Boosting
+
+```{r}
+library(gbm)
+```
+
+```{r}
+activity_hb_for_boosting <- activity_hb_for_fitting %>% 
+  mutate_if(is.character, as.factor)
+
+
+
+boost_activity <- gbm(number_of_discharges ~ .,
+                      data = activity_hb_for_boosting,
+                      distribution = "gaussian", 
+                      n.tree = 5000, 
+                      interaction.depth = 4)
+
+summary(boost_activity)
+```
+
+```{r}
+par(mfrow = c(1,3))
+plot(boost_activity, i = "age")
+plot(boost_activity, i = "diagnosis")
+plot(boost_activity, i = "admission_type")
+```
+
+No idea what I'm doing here!
+
+
+
+
+
