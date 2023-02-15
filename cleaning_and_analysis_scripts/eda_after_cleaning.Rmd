@@ -453,3 +453,18 @@ mortality_hb %>%
   facet_wrap(~diagnosis, scales = "free_y", nrow = 2)
 ```
 
+Investigating spike in males deaths from sub haem in 2020
+
+
+```{r}
+mortality_hb %>% 
+  filter(hbr != "S92000003",
+         sex == "Male",
+         !age %in% c("All", "under 75"), 
+         diagnosis == "Subarachnoid Haemorrhage") %>% 
+  ggplot(aes(year, number_of_deaths)) +
+  geom_col(aes(fill = sex), position = "dodge") +
+  facet_wrap(~hbr_name)
+```
+
+We see the spike in Glasgow, Dumfries, Forth Valley and Lothian. 

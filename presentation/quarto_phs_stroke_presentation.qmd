@@ -30,7 +30,7 @@ embed code like this:
 
 ## Most Common CVD Diagnosis
 
-Cerebrovascular disease - data divided into 4 categories
+##### Cerebrovascular disease - data divided into 4 categories
 
 -   Stroke
 -   Subarachnoid haemorrhage
