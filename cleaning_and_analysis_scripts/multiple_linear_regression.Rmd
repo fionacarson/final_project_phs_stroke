@@ -1,0 +1,1176 @@
+---
+title: "Time Series Forecasting"
+output:
+  html_document:
+    toc: yes
+    toc_float: true
+    toc_depth: '2'
+    highlight: tango
+    df_print: paged
+---
+
+# Multiple Linear Regression
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+library(fastDummies)
+library(GGally)
+library(ggfortify)
+library(modelr)
+#library(relaimpo)
+library(glmulti)
+```
+
+
+```{r}
+activity_hb <- read_csv(here("clean_data/activity_hb.csv")) 
+```
+
+Convert financial year variable to numerical based on start year and remove other columns we don't need. 
+
+```{r}
+activity_hb_for_fitting <- activity_hb %>% 
+  mutate(start_fin_year = as.numeric(str_extract(financial_year, "^[0-9]{4}")), 
+         .after = financial_year) %>% 
+  select(-financial_year, -hbr) %>% 
+  # Remove all rows which are combinations of other rows
+  filter(hbr_name != "Scotland",
+         admission_type != "All",
+         !age %in% c("All", "under 75"),
+         sex != "All",
+         diagnosis != "Cerebrovascular Disease") 
+```
+
+
+```{r}
+activity_hb_for_fitting %>% 
+  group_by(start_fin_year) %>% 
+  summarise(total_discharges = sum(number_of_discharges),
+            total_crude_rate = mean(crude_rate),
+            total_easr = mean(easr)) %>% 
+  ggplot(aes(start_fin_year, total_discharges)) +
+  geom_point() +
+  geom_smooth(method = lm)
+```
+
+The crude rate and easr are far from linear so I don't think we can use linear regression to predict those. Maybe it is more appropriate to predict based on the real numbers anyway. 
+
+When a line if fitted to the number of discharge data it looks better than expected. 
+
+### Creating dummy variables
+
+```{r}
+activity_hb_dummy <- activity_hb_for_fitting %>% 
+  dummy_cols(select_columns = c("hbr_name", "admission_type", "age", "sex", "diagnosis"),
+             remove_first_dummy = TRUE,
+             remove_selected_columns = TRUE) %>% 
+  clean_names()
+```
+
+
+### ggpairs
+
+```{r, message = FALSE, warning = FALSE}
+activity_hb_dummy %>% 
+  select(-crude_rate, -easr, -starts_with("hbr_name")) %>% 
+  ggpairs(progress = FALSE)
+```
+Had to run health boards separately as there were too many variables. 
+
+```{r, message = FALSE, warning = FALSE}
+activity_hb_dummy %>% 
+  select(-crude_rate, -easr, -starts_with(c("admiss", "age", "diagnosis", "sex"))) %>% 
+  ggpairs(progress = FALSE)
+```
+
+### Model 1 diagnosis stroke
+
+diagnosis = stroke has the strongest correlation at 0.346 so lets use this as first predictor. 
+
+```{r}
+model1 <- lm(number_of_discharges ~ diagnosis_stroke, data = activity_hb_dummy)
+```
+
+```{r}
+autoplot(model1)
+```
+
+```{r}
+summary(model1)
+```
+
+Not the worst R2 I've ever seen. 
+
+```{r}
+activity_hb_remaining_resid <- activity_hb_dummy %>% 
+  add_residuals(model1) %>% 
+  select(-crude_rate, -easr, -starts_with("hbr_name"), -number_of_discharges, 
+         -diagnosis_stroke)
+
+
+ggpairs(activity_hb_remaining_resid, progress = FALSE)
+```
+
+```{r}
+activity_hb_remaining_resid <- activity_hb_dummy %>% 
+  add_residuals(model1) %>% 
+  select(-crude_rate, -easr, -starts_with(c("admiss", "age", "diagnosis", "sex")), 
+         -number_of_discharges, -diagnosis_stroke)
+
+ggpairs(activity_hb_remaining_resid, progress = FALSE)
+```
+
+Over 75 has correlation of 0.202
+Glasgow has correlation of 0.249 
+
+### Model 2 - Glasgow
+
+```{r}
+model2 <- lm(number_of_discharges ~ 
+               diagnosis_stroke + 
+               hbr_name_greater_glasgow_clyde,
+               data = activity_hb_dummy)
+```
+
+```{r}
+autoplot(model1)
+```
+
+```{r}
+summary(model2)
+```
+
+Decent improvement in R2
+
+```{r}
+activity_hb_remaining_resid <- activity_hb_dummy %>% 
+  add_residuals(model2) %>% 
+  select(-crude_rate, -easr, -starts_with("hbr_name"), -number_of_discharges, 
+         -diagnosis_stroke, -hbr_name_greater_glasgow_clyde)
+
+
+ggpairs(activity_hb_remaining_resid, progress = FALSE)
+```
+
+```{r}
+activity_hb_remaining_resid <- activity_hb_dummy %>% 
+  add_residuals(model2) %>% 
+  select(-crude_rate, -easr, -starts_with(c("admiss", "age", "diagnosis", "sex")), 
+         -number_of_discharges, -diagnosis_stroke, -hbr_name_greater_glasgow_clyde)
+
+ggpairs(activity_hb_remaining_resid, progress = FALSE)
+```
+
+over 75 has correlation of 0.209
+admission type transfer has correlation of 0.174
+health board Lanarkshire has correlation of 0.117
+
+### Model 3 over 75
+
+```{r}
+model3 <- lm(number_of_discharges ~ 
+               diagnosis_stroke + 
+               hbr_name_greater_glasgow_clyde +
+               age_over_75,
+               data = activity_hb_dummy)
+```
+
+```{r}
+autoplot(model3)
+```
+
+```{r}
+summary(model3)
+```
+
+R2 is creeping up. 
+
+
+Can run ggcorr to get correlation data and this way we don't need to split into two sets for ggpairs or wait for ggpairs to run. 
+
+```{r}
+activity_hb_remaining_resid <- activity_hb_dummy %>% 
+  add_residuals(model3) %>% 
+  select(-crude_rate, -easr, -number_of_discharges, 
+         -diagnosis_stroke, -hbr_name_greater_glasgow_clyde, -age_over_75)
+
+ggcorr(activity_hb_remaining_resid,
+       label = TRUE, label_round = 2, layout.exp = 0, hjust = 1)
+```
+
+### Model 4 admission type transfer
+
+```{r}
+model4 <- lm(number_of_discharges ~ 
+               diagnosis_stroke + 
+               hbr_name_greater_glasgow_clyde +
+               age_over_75 +
+               admission_type_transfer,
+               data = activity_hb_dummy)
+```
+
+
+```{r}
+autoplot(model4)
+```
+
+```{r}
+summary(model4)
+```
+
+```{r}
+activity_hb_remaining_resid <- activity_hb_dummy %>% 
+  add_residuals(model4) %>% 
+  select(-crude_rate, -easr, -number_of_discharges,
+         -diagnosis_stroke, -hbr_name_greater_glasgow_clyde, -age_over_75,
+         -admission_type_transfer)
+
+ggcorr(activity_hb_remaining_resid,
+       label = TRUE, label_round = 2, layout.exp = 0, hjust = 1)
+```
+
+### Model 5 admission type emergency
+
+```{r}
+model5 <- lm(number_of_discharges ~ 
+               diagnosis_stroke + 
+               hbr_name_greater_glasgow_clyde +
+               age_over_75 +
+               admission_type_transfer +
+               admission_type_emergency,
+               data = activity_hb_dummy)
+```
+
+```{r}
+autoplot(model5)
+```
+
+```{r}
+summary(model5)
+```
+
+```{r}
+activity_hb_remaining_resid <- activity_hb_dummy %>% 
+  add_residuals(model5) %>% 
+  select(-crude_rate, -easr, -number_of_discharges,
+         -diagnosis_stroke, -hbr_name_greater_glasgow_clyde, -age_over_75,
+         -admission_type_transfer, -admission_type_emergency)
+
+ggcorr(activity_hb_remaining_resid,
+       label = TRUE, label_round = 2, layout.exp = 0, hjust = 1)
+```
+
+Lanark 0.12
+
+### Model 6 lanarkshire
+
+```{r}
+model6 <- lm(number_of_discharges ~ 
+               diagnosis_stroke + 
+               hbr_name_greater_glasgow_clyde +
+               age_over_75 +
+               admission_type_transfer +
+               admission_type_emergency +
+               hbr_name_lanarkshire,
+               data = activity_hb_dummy)
+```
+
+```{r}
+autoplot(model6)
+```
+
+```{r}
+summary(model6)
+```
+
+```{r}
+activity_hb_remaining_resid <- activity_hb_dummy %>% 
+  add_residuals(model6) %>% 
+  select(-crude_rate, -easr, -number_of_discharges, 
+         -diagnosis_stroke, -hbr_name_greater_glasgow_clyde, -age_over_75,
+         -admission_type_transfer, -admission_type_emergency,
+         -hbr_name_lanarkshire)
+
+ggcorr(activity_hb_remaining_resid,
+       label = TRUE, label_round = 2, layout.exp = 0, hjust = 1)
+```
+
+### Model 7 lothian
+
+```{r}
+model7 <- lm(number_of_discharges ~ 
+               diagnosis_stroke + 
+               hbr_name_greater_glasgow_clyde +
+               age_over_75 +
+               admission_type_transfer +
+               admission_type_emergency +
+               hbr_name_lanarkshire +
+               hbr_name_lothian,
+               data = activity_hb_dummy)
+```
+
+```{r}
+autoplot(model7)
+```
+
+```{r}
+summary(model7)
+```
+
+```{r}
+activity_hb_remaining_resid <- activity_hb_dummy %>% 
+  add_residuals(model7) %>% 
+  select(-crude_rate, -easr, -number_of_discharges, 
+         -diagnosis_stroke, -hbr_name_greater_glasgow_clyde, -age_over_75,
+         -admission_type_transfer, -admission_type_emergency,
+         -hbr_name_lanarkshire, -hbr_name_lothian)
+
+ggcorr(activity_hb_remaining_resid,
+       label = TRUE, label_round = 2, layout.exp = 0, hjust = 1)
+```
+
+Lets add the Western Isles as it is a slightly bigger health board than Orkney or Shetland. 
+
+### Model 8 Western Isles
+
+```{r}
+model8 <- lm(number_of_discharges ~ 
+               diagnosis_stroke + 
+               hbr_name_greater_glasgow_clyde +
+               age_over_75 +
+               admission_type_transfer +
+               admission_type_emergency +
+               hbr_name_lanarkshire +
+               hbr_name_lothian +
+               hbr_name_western_isles,
+               data = activity_hb_dummy)
+```
+
+```{r}
+autoplot(model8)
+```
+
+```{r}
+summary(model8)
+```
+
+```{r}
+activity_hb_remaining_resid <- activity_hb_dummy %>% 
+  add_residuals(model8) %>% 
+  select(-crude_rate, -easr, -number_of_discharges,
+         -diagnosis_stroke, -hbr_name_greater_glasgow_clyde, -age_over_75,
+         -admission_type_transfer, -admission_type_emergency,
+         -hbr_name_lanarkshire, -hbr_name_lothian, -hbr_name_western_isles)
+
+ggcorr(activity_hb_remaining_resid,
+       label = TRUE, label_round = 2, layout.exp = 0, hjust = 1)
+```
+
+The correlation for Orkney and Shetland have stayed the same, thought their effects might disappear on adding Western Isles. 
+
+
+### Model 9 Orkney
+
+```{r}
+model9 <- lm(number_of_discharges ~ 
+               diagnosis_stroke + 
+               hbr_name_greater_glasgow_clyde +
+               age_over_75 +
+               admission_type_transfer +
+               admission_type_emergency +
+               hbr_name_lanarkshire +
+               hbr_name_lothian +
+               hbr_name_western_isles +
+               hbr_name_orkney,
+               data = activity_hb_dummy)
+```
+
+```{r}
+autoplot(model9)
+```
+
+```{r}
+summary(model9)
+```
+
+R2 still increasing (slowly). Adjusted R2 is not much lower and all terms we've added have good signficance. Only issue is plots from autoplot which look horrible!
+
+
+```{r}
+activity_hb_remaining_resid <- activity_hb_dummy %>% 
+  add_residuals(model9) %>% 
+  select(-crude_rate, -easr, -number_of_discharges, 
+         -diagnosis_stroke, -hbr_name_greater_glasgow_clyde, -age_over_75,
+         -admission_type_transfer, -admission_type_emergency,
+         -hbr_name_lanarkshire, -hbr_name_lothian, -hbr_name_western_isles, 
+         -hbr_name_orkney)
+
+ggcorr(activity_hb_remaining_resid,
+       label = TRUE, label_round = 2, layout.exp = 0, hjust = 1)
+```
+
+Shetland still at -0.07 so add this next.
+
+### Model 10 Shetland
+
+```{r}
+model10 <- lm(number_of_discharges ~ 
+               diagnosis_stroke + 
+               hbr_name_greater_glasgow_clyde +
+               age_over_75 +
+               admission_type_transfer +
+               admission_type_emergency +
+               hbr_name_lanarkshire +
+               hbr_name_lothian +
+               hbr_name_western_isles +
+               hbr_name_orkney +
+               hbr_name_shetland,
+               data = activity_hb_dummy)
+```
+
+```{r}
+autoplot(model10)
+```
+
+```{r}
+summary(model10)
+```
+
+
+```{r}
+activity_hb_remaining_resid <- activity_hb_dummy %>% 
+  add_residuals(model10) %>% 
+  select(-crude_rate, -easr, -number_of_discharges, 
+         -diagnosis_stroke, -hbr_name_greater_glasgow_clyde, -age_over_75,
+         -admission_type_transfer, -admission_type_emergency,
+         -hbr_name_lanarkshire, -hbr_name_lothian, -hbr_name_western_isles, 
+         -hbr_name_orkney, -hbr_name_shetland)
+
+ggcorr(activity_hb_remaining_resid,
+       label = TRUE, label_round = 2, layout.exp = 0, hjust = 1)
+```
+
+### Model 11 age 65 to 74
+
+```{r}
+model11 <- lm(number_of_discharges ~ 
+               diagnosis_stroke + 
+               hbr_name_greater_glasgow_clyde +
+               age_over_75 +
+               admission_type_transfer +
+               admission_type_emergency +
+               hbr_name_lanarkshire +
+               hbr_name_lothian +
+               hbr_name_western_isles +
+               hbr_name_orkney +
+               hbr_name_shetland +
+                age_65_74,
+               data = activity_hb_dummy)
+```
+
+```{r}
+autoplot(model11)
+```
+
+
+```{r}
+summary(model11)
+```
+
+Its odd that the 3 island health boards have exactly the same effects. I think their values might be zero for all the predictors. Should they be excluded?
+
+```{r}
+activity_hb_remaining_resid <- activity_hb_dummy %>% 
+  add_residuals(model11) %>% 
+  select(-crude_rate, -easr, -number_of_discharges, 
+         -diagnosis_stroke, -hbr_name_greater_glasgow_clyde, -age_over_75,
+         -admission_type_transfer, -admission_type_emergency,
+         -hbr_name_lanarkshire, -hbr_name_lothian, -hbr_name_western_isles, 
+         -hbr_name_orkney, -hbr_name_shetland, -age_65_74)
+
+ggcorr(activity_hb_remaining_resid,
+       label = TRUE, label_round = 2, layout.exp = 0, hjust = 1)
+```
+
+### Model 12 age 45 to 64
+
+```{r}
+model12 <- lm(number_of_discharges ~ 
+               diagnosis_stroke + 
+               hbr_name_greater_glasgow_clyde +
+               age_over_75 +
+               admission_type_transfer +
+               admission_type_emergency +
+               hbr_name_lanarkshire +
+               hbr_name_lothian +
+               hbr_name_western_isles +
+               hbr_name_orkney +
+               hbr_name_shetland +
+                age_65_74 +
+                age_45_64,
+               data = activity_hb_dummy)
+```
+
+```{r}
+autoplot(model12)
+```
+
+```{r}
+summary(model12)
+```
+
+R2 is above 30!
+
+```{r}
+activity_hb_remaining_resid <- activity_hb_dummy %>% 
+  add_residuals(model12) %>% 
+  select(-crude_rate, -easr, -number_of_discharges, 
+         -diagnosis_stroke, -hbr_name_greater_glasgow_clyde, -age_over_75,
+         -admission_type_transfer, -admission_type_emergency,
+         -hbr_name_lanarkshire, -hbr_name_lothian, -hbr_name_western_isles, 
+         -hbr_name_orkney, -hbr_name_shetland, -age_65_74, -age_45_64)
+
+ggcorr(activity_hb_remaining_resid,
+       label = TRUE, label_round = 2, layout.exp = 0, hjust = 1)
+
+ggpairs(activity_hb_remaining_resid, progress = FALSE)
+```
+
+### Model 13 Borders
+
+```{r}
+model13 <- lm(number_of_discharges ~ 
+               diagnosis_stroke + 
+               hbr_name_greater_glasgow_clyde +
+               age_over_75 +
+               admission_type_transfer +
+               admission_type_emergency +
+               hbr_name_lanarkshire +
+               hbr_name_lothian +
+               hbr_name_western_isles +
+               hbr_name_orkney +
+               hbr_name_shetland +
+                age_65_74 +
+                age_45_64 +
+                hbr_name_borders,
+               data = activity_hb_dummy)
+```
+
+```{r}
+summary(model13)
+```
+
+The p-value has increase by a teeny tiny amount. 
+
+```{r}
+activity_hb_remaining_resid <- activity_hb_dummy %>% 
+  add_residuals(model13) %>% 
+  select(-crude_rate, -easr, -number_of_discharges, 
+         -diagnosis_stroke, -hbr_name_greater_glasgow_clyde, -age_over_75,
+         -admission_type_transfer, -admission_type_emergency,
+         -hbr_name_lanarkshire, -hbr_name_lothian, -hbr_name_western_isles, 
+         -hbr_name_orkney, -hbr_name_shetland, -age_65_74, -age_45_64,
+         -hbr_name_borders)
+
+ggcorr(activity_hb_remaining_resid,
+       label = TRUE, label_round = 2, layout.exp = 0, hjust = 1)
+
+ggpairs(activity_hb_remaining_resid, progress = FALSE)
+```
+
+### Model 14 Dumfries
+
+```{r}
+model14 <- lm(number_of_discharges ~ 
+               diagnosis_stroke + 
+               hbr_name_greater_glasgow_clyde +
+               age_over_75 +
+               admission_type_transfer +
+               admission_type_emergency +
+               hbr_name_lanarkshire +
+               hbr_name_lothian +
+               hbr_name_western_isles +
+               hbr_name_orkney +
+               hbr_name_shetland +
+                age_65_74 +
+                age_45_64 +
+                hbr_name_borders +
+                hbr_name_dumfries_galloway,
+               data = activity_hb_dummy)
+```
+
+```{r}
+summary(model14)
+```
+
+```{r}
+activity_hb_remaining_resid <- activity_hb_dummy %>% 
+  add_residuals(model14) %>% 
+  select(-crude_rate, -easr, -number_of_discharges, 
+         -diagnosis_stroke, -hbr_name_greater_glasgow_clyde, -age_over_75,
+         -admission_type_transfer, -admission_type_emergency,
+         -hbr_name_lanarkshire, -hbr_name_lothian, -hbr_name_western_isles, 
+         -hbr_name_orkney, -hbr_name_shetland, -age_65_74, -age_45_64,
+         -hbr_name_borders, -hbr_name_dumfries_galloway)
+
+ggcorr(activity_hb_remaining_resid,
+       label = TRUE, label_round = 2, layout.exp = 0, hjust = 1)
+
+ggpairs(activity_hb_remaining_resid, progress = FALSE)
+```
+
+### Model 15 sub haem
+
+```{r}
+model15 <- lm(number_of_discharges ~ 
+               diagnosis_stroke + 
+               hbr_name_greater_glasgow_clyde +
+               age_over_75 +
+               admission_type_transfer +
+               admission_type_emergency +
+               hbr_name_lanarkshire +
+               hbr_name_lothian +
+               hbr_name_western_isles +
+               hbr_name_orkney +
+               hbr_name_shetland +
+                age_65_74 +
+                age_45_64 +
+                hbr_name_borders +
+                hbr_name_dumfries_galloway +
+                diagnosis_subarachnoid_haemorrhage,
+               data = activity_hb_dummy)
+```
+
+```{r}
+summary(model15)
+```
+
+```{r}
+activity_hb_remaining_resid <- activity_hb_dummy %>% 
+  add_residuals(model15) %>% 
+  select(-crude_rate, -easr, -number_of_discharges, 
+         -diagnosis_stroke, -hbr_name_greater_glasgow_clyde, -age_over_75,
+         -admission_type_transfer, -admission_type_emergency,
+         -hbr_name_lanarkshire, -hbr_name_lothian, -hbr_name_western_isles, 
+         -hbr_name_orkney, -hbr_name_shetland, -age_65_74, -age_45_64,
+         -hbr_name_borders, -hbr_name_dumfries_galloway, 
+         -diagnosis_subarachnoid_haemorrhage)
+
+ggcorr(activity_hb_remaining_resid,
+       label = TRUE, label_round = 2, layout.exp = 0, hjust = 1)
+
+ggpairs(activity_hb_remaining_resid, progress = FALSE)
+```
+
+### Model 16 year
+
+```{r}
+model16 <- lm(number_of_discharges ~ 
+               diagnosis_stroke + 
+               hbr_name_greater_glasgow_clyde +
+               age_over_75 +
+               admission_type_transfer +
+               admission_type_emergency +
+               hbr_name_lanarkshire +
+               hbr_name_lothian +
+               hbr_name_western_isles +
+               hbr_name_orkney +
+               hbr_name_shetland +
+                age_65_74 +
+                age_45_64 +
+                hbr_name_borders +
+                hbr_name_dumfries_galloway +
+                diagnosis_subarachnoid_haemorrhage +
+                start_fin_year,
+               data = activity_hb_dummy)
+```
+
+```{r}
+summary(model16)
+```
+
+```{r}
+activity_hb_remaining_resid <- activity_hb_dummy %>% 
+  add_residuals(model16) %>% 
+  select(-crude_rate, -easr, -number_of_discharges, 
+         -diagnosis_stroke, -hbr_name_greater_glasgow_clyde, -age_over_75,
+         -admission_type_transfer, -admission_type_emergency,
+         -hbr_name_lanarkshire, -hbr_name_lothian, -hbr_name_western_isles, 
+         -hbr_name_orkney, -hbr_name_shetland, -age_65_74, -age_45_64,
+         -hbr_name_borders, -hbr_name_dumfries_galloway, 
+         -diagnosis_subarachnoid_haemorrhage, -start_fin_year)
+
+ggcorr(activity_hb_remaining_resid,
+       label = TRUE, label_round = 2, layout.exp = 0, hjust = 1)
+
+ggpairs(activity_hb_remaining_resid, progress = FALSE)
+```
+
+
+
+Even ggpairs is indicating nothing more worth adding. Forth Valley and Tayside have dots beside them which is the level below one star but lets not add them. 
+
+## Relative importance
+
+The final model is model 16
+
+lm(formula = number_of_discharges ~ diagnosis_stroke + hbr_name_greater_glasgow_clyde + 
+    age_over_75 + admission_type_transfer + admission_type_emergency + 
+    hbr_name_lanarkshire + hbr_name_lothian + hbr_name_western_isles + 
+    hbr_name_orkney + hbr_name_shetland + age_65_74 + age_45_64 + 
+    hbr_name_borders + hbr_name_dumfries_galloway + diagnosis_subarachnoid_haemorrhage +
+    start_fin_year, 
+    data = activity_hb_dummy)
+    
+R2 = 31.4
+adjusted R2 = 31.4
+
+```{r}
+calc.relimp(model15, type = "lmg", rela = TRUE)
+```
+
+
+## glmulti
+
+```{r}
+activity_hb_for_glmulti <- activity_hb_dummy %>% 
+  select(-crude_rate, -easr)
+
+
+glmulti_fit <- glmulti(
+  number_of_discharges ~ ., 
+  data = activity_hb_for_glmulti,
+  level = 1, # 2 = include pairwise interactions, 1 = main effects only (main effect = no pairwise interactions)
+  minsize = 0, # no min size of model
+  maxsize = -1, # -1 = no max size of model
+  marginality = TRUE, # marginality here means the same as 'strongly hierarchical' interactions, i.e. include pairwise interactions only if both predictors present in the model as main effects.
+  method = "h", # the problem is too large for exhaustive search, so search using a genetic algorithm
+  crit = bic, # criteria for model selection is BIC value (lower is better)
+  plotty = FALSE, # don't plot models as function runs
+  report = TRUE, # do produce reports as function runs
+  confsetsize = 100, # return best 100 solutions
+  fitfunction = lm # fit using the `lm` function
+)
+```
+
+Genetic model would'nt converge and exhaustive model took ages (could maybe leave it for longer over lunch)
+
+ number_of_discharges~1+start_fin_year+hbr_name_borders+hbr_name_dumfries_galloway+hbr_name_greater_glasgow_clyde+hbr_name_lanarkshire+hbr_name_lothian+hbr_name_orkney+hbr_name_shetland+hbr_name_western_isles+admission_type_emergency+admission_type_transfer+age_45_64+age_65_74+age_over_75+diagnosis_stroke+diagnosis_subarachnoid_haemorrhage
+
+Try glmulti without health board variables
+ 
+```{r}
+activity_without_hb <- activity_hb_for_glmulti %>% 
+  select(-starts_with("hbr_name"))
+
+
+glmulti_fit <- glmulti(
+  number_of_discharges ~ ., 
+  data = activity_without_hb,
+  level = 1, # 2 = include pairwise interactions, 1 = main effects only (main effect = no pairwise interactions)
+  minsize = 0, # no min size of model
+  maxsize = -1, # -1 = no max size of model
+  marginality = TRUE, # marginality here means the same as 'strongly hierarchical' interactions, i.e. include pairwise interactions only if both predictors present in the model as main effects.
+  method = "g", # the problem is too large for exhaustive search, so search using a genetic algorithm
+  crit = bic, # criteria for model selection is BIC value (lower is better)
+  plotty = FALSE, # don't plot models as function runs
+  report = TRUE, # do produce reports as function runs
+  confsetsize = 100, # return best 100 solutions
+  fitfunction = lm # fit using the `lm` function
+)
+```
+ 
+```{r}
+best_model_glmulti_genetic <- glmulti_fit@objects[[1]]
+
+
+best_model_glmulti_genetic$terms[[3]]
+```
+
+ 
+ model16 <- lm(number_of_discharges ~ 
+               diagnosis_stroke + 
+               hbr_name_greater_glasgow_clyde +
+               age_over_75 +
+               admission_type_transfer +
+               admission_type_emergency +
+               hbr_name_lanarkshire +
+               hbr_name_lothian +
+               hbr_name_western_isles +
+               hbr_name_orkney +
+               hbr_name_shetland +
+                age_65_74 +
+                age_45_64 +
+                hbr_name_borders +
+                hbr_name_dumfries_galloway +
+                diagnosis_subarachnoid_haemorrhage +
+                start_fin_year,
+               data = activity_hb_dummy)
+               
+               
+               
+```{r}
+glmulti_model <- lm(number_of_discharges ~
+                      1 + start_fin_year + 
+                      admission_type_emergency + 
+                      admission_type_transfer + 
+                      age_45_64 + age_65_74 + age_over_75 + 
+                      diagnosis_stroke + 
+                      diagnosis_subarachnoid_haemorrhage,
+                    data = activity_without_hb)
+```
+    
+```{r}
+summary(glmulti_model)
+```
+ 
+This model is not as good as the one with health boards so health boards are helping.
+
+
+## Further Analysis
+
+```{r}
+activity_hb_for_fitting %>% 
+  ggplot(aes(start_fin_year, number_of_discharges)) +
+  geom_point(aes(colour = diagnosis, shape = age)) 
+```
+
+## Not using dummy variables
+
+```{r}
+activity_hb_no_dummies <- activity_hb_for_fitting %>% 
+  mutate_if(is.character, as.factor) %>% 
+  select(-crude_rate, -easr) 
+```
+
+```{r, message = FALSE}
+ggpairs(activity_hb_no_dummies, progress = FALSE)
+```
+
+This isn't telling us anything. Let's just build a model with all variables. 
+
+```{r}
+modelA <- lm(number_of_discharges ~ ., data = activity_hb_no_dummies)
+
+summary(modelA)
+```
+
+This model backs up our manual model well! Everything that we chose not to add to our manual model has a high p-value. 
+
+#### Prediction 1
+
+```{r}
+year <- 2020
+hbr_nameDumfries_Galloway <- -13.8998
+age65_74 <- 17.5163
+diagnosisStroke <- 52.3219
+admission_typeTransfer <- 36.0120
+sexMale <- -0.6597
+
+
+prediction1 <- -1286.5535 + (0.6246 * year) + hbr_nameDumfries_Galloway +
+  age65_74 + diagnosisStroke + admission_typeTransfer + sexMale
+  
+prediction1
+
+```
+
+```{r}
+activity_hb_no_dummies %>% 
+  filter(hbr_name == "Dumfries & Galloway") %>% 
+  filter(age == "65-74") %>% 
+#  filter(start_fin_year == 2020) %>% 
+  filter(diagnosis == "Stroke") %>% 
+  filter(admission_type == "Transfer") %>% 
+  filter(sex == "Male") %>% 
+  ggplot(aes(start_fin_year, number_of_discharges)) +
+  geom_point()
+
+
+```
+
+```{r}
+activity_hb_no_dummies %>% 
+  add_predictions(modelA) %>% 
+  group_by(start_fin_year) %>% 
+  summarise(total_discharges = sum(number_of_discharges),
+            total_pred = sum(pred)) %>% 
+  ggplot() +
+  geom_point(mapping = aes(start_fin_year, total_discharges)) +
+  geom_point(mapping = aes(start_fin_year, total_pred, colour = "red"))
+```
+
+```{r}
+activity_hb_no_dummies %>% 
+  add_predictions(modelA) %>% 
+  filter(hbr_name == "Dumfries & Galloway") %>% 
+  group_by(start_fin_year) %>% 
+  summarise(total_discharges = sum(number_of_discharges),
+            total_pred = sum(pred)) %>% 
+  ggplot() +
+  geom_point(mapping = aes(start_fin_year, total_discharges)) +
+  geom_point(mapping = aes(start_fin_year, total_pred, colour = "red"))
+```
+
+```{r}
+activity_hb_dummy %>% 
+  add_predictions(model16) %>% 
+  group_by(start_fin_year) %>% 
+  summarise(total_discharges = sum(number_of_discharges),
+            total_pred = sum(pred)) %>% 
+  ggplot() +
+  geom_point(mapping = aes(start_fin_year, total_discharges)) +
+  geom_point(mapping = aes(start_fin_year, total_pred, colour = "red"))
+```
+
+```{r}
+activity_hb_dummy %>% 
+  add_predictions(model16) %>% 
+  filter(hbr_name_greater_glasgow_clyde == 1) %>% 
+  group_by(start_fin_year) %>% 
+  summarise(total_discharges = sum(number_of_discharges),
+            total_pred = sum(pred)) %>% 
+  ggplot() +
+  geom_point(mapping = aes(start_fin_year, total_discharges)) +
+  geom_point(mapping = aes(start_fin_year, total_pred, colour = "red"))
+```
+
+
+
+```{r}
+activity_hb_dummy %>% 
+  add_predictions(model16) %>% 
+  ggplot(aes(number_of_discharges, pred)) +
+  geom_point()
+```
+
+
+## Predicting by splitting datasets
+
+Spliting dataset into 8 years for training and most recent 5 years for testing. 
+```{r}
+activity_2009_2016 <- activity_hb_dummy %>% 
+  filter(start_fin_year <= 2016)
+
+activity_2017_2021 <- activity_hb_dummy %>% 
+  filter(start_fin_year >= 2017)
+```
+
+
+```{r}
+equation_model16 <- number_of_discharges ~ 
+               diagnosis_stroke + 
+               hbr_name_greater_glasgow_clyde +
+               age_over_75 +
+               admission_type_transfer +
+               admission_type_emergency +
+               hbr_name_lanarkshire +
+               hbr_name_lothian +
+               hbr_name_western_isles +
+               hbr_name_orkney +
+               hbr_name_shetland +
+                age_65_74 +
+                age_45_64 +
+                hbr_name_borders +
+                hbr_name_dumfries_galloway +
+                diagnosis_subarachnoid_haemorrhage +
+                start_fin_year
+
+
+model16 <- lm(equation_model16,
+               data = activity_2009_2016)
+```
+
+```{r}
+summary(model16)
+```
+
+```{r}
+activity_2017_2021 %>% 
+  add_predictions(model16) %>% 
+  group_by(start_fin_year) %>% 
+  summarise(total_discharges = sum(number_of_discharges),
+            total_pred = sum(pred)) %>% 
+  ggplot() +
+  geom_point(mapping = aes(start_fin_year, total_discharges)) +
+  geom_point(mapping = aes(start_fin_year, total_pred, colour = "red")) +
+  scale_y_continuous(limits = c(30000, 40000)) 
+
+activity_2017_2021 %>% 
+  add_predictions(model16) %>% 
+ filter(age_45_64 == 0,
+        age_65_74 == 0,
+        age_over_75 == 0) %>% 
+  group_by(start_fin_year) %>% 
+  summarise(total_discharges = sum(number_of_discharges),
+            total_pred = sum(pred)) %>% 
+  ggplot() +
+  geom_point(mapping = aes(start_fin_year, total_discharges)) +
+  geom_point(mapping = aes(start_fin_year, total_pred, colour = "red")) +
+  scale_y_continuous(limits = c(0, 10000)) 
+
+activity_2017_2021 %>% 
+  add_predictions(model16) %>% 
+ filter(age_45_64 == 1) %>% 
+  group_by(start_fin_year) %>% 
+  summarise(total_discharges = sum(number_of_discharges),
+            total_pred = sum(pred)) %>% 
+  ggplot() +
+  geom_point(mapping = aes(start_fin_year, total_discharges)) +
+  geom_point(mapping = aes(start_fin_year, total_pred, colour = "red")) +
+  scale_y_continuous(limits = c(5000, 10000)) 
+
+activity_2017_2021 %>% 
+  add_predictions(model16) %>% 
+ filter(age_65_74 == 1) %>% 
+  group_by(start_fin_year) %>% 
+  summarise(total_discharges = sum(number_of_discharges),
+            total_pred = sum(pred)) %>% 
+  ggplot() +
+  geom_point(mapping = aes(start_fin_year, total_discharges)) +
+  geom_point(mapping = aes(start_fin_year, total_pred, colour = "red")) +
+  scale_y_continuous(limits = c(5000, 10000)) 
+
+activity_2017_2021 %>% 
+  add_predictions(model16) %>% 
+ filter(age_over_75 == 1) %>% 
+  group_by(start_fin_year) %>% 
+  summarise(total_discharges = sum(number_of_discharges),
+            total_pred = sum(pred)) %>% 
+  ggplot() +
+  geom_point(mapping = aes(start_fin_year, total_discharges)) +
+  geom_point(mapping = aes(start_fin_year, total_pred, colour = "red")) +
+  scale_y_continuous(limits = c(10000, 20000)) 
+
+```
+
+The model is predicting quite well on all age groups except under 45s
+
+
+
+```{r}
+activity_2017_2021 %>% 
+  add_predictions(model16) %>% 
+   filter(sex_male == 1) %>% 
+  group_by(start_fin_year) %>% 
+  summarise(total_discharges = sum(number_of_discharges),
+            total_pred = sum(pred)) %>% 
+  ggplot() +
+  geom_point(mapping = aes(start_fin_year, total_discharges)) +
+  geom_point(mapping = aes(start_fin_year, total_pred, colour = "red")) +
+  scale_y_continuous(limits = c(0, 25000)) 
+
+activity_2017_2021 %>% 
+  add_predictions(model16) %>% 
+  filter(sex_male == 0) %>% 
+  group_by(start_fin_year) %>% 
+  summarise(total_discharges = sum(number_of_discharges),
+            total_pred = sum(pred)) %>% 
+  ggplot() +
+  geom_point(mapping = aes(start_fin_year, total_discharges)) +
+  geom_point(mapping = aes(start_fin_year, total_pred, colour = "red")) +
+  scale_y_continuous(limits = c(0, 25000)) 
+
+```
+
+The model is predicting reasonably well on male and female. 
+
+
+Can we calculate the % difference between actual and predicted values and identify the areas the model is not predicting well on. 
+I think this is the R2.
+
+
+```{r}
+activity_2017_2021_pred <- activity_2017_2021 %>% 
+  add_predictions(model16)
+
+summary(lm(pred ~ number_of_discharges, data = activity_2017_2021_pred))
+```
+
+R2 is 0.3 so slightly lower than for our training set which is what we would be expecting. 
+
+```{r}
+activity_2017_2021_pred %>% 
+  add_predictions(model16) %>% 
+  ggplot() +
+  geom_point(mapping = aes(number_of_discharges, pred)) +
+  geom_abline(slope = 1, intercept = 0)
+
+activity_2017_2021_pred %>% 
+  add_predictions(model16) %>% 
+  ggplot() +
+  geom_point(mapping = aes(number_of_discharges, pred)) +
+  geom_abline(slope = 1, intercept = 0, colour = "red") +
+  scale_y_continuous(limits = c(0, 160)) +
+  scale_x_continuous(limits = c(0, 500))
+```
+
+I think we have to admit that this is a terrible model. 
+
+
+
+
+
+## Fit without healthboard data
+
+```{r}
+activity_dummy_no_hb <- activity_hb %>% 
+  mutate(start_fin_year = as.numeric(str_extract(financial_year, "^[0-9]{4}")), 
+         .after = financial_year) %>% 
+  select(-financial_year, -hbr) %>% 
+  # Remove all rows which are combinations of other rows
+  filter(hbr_name == "Scotland",
+         admission_type != "All",
+         !age %in% c("All", "under 75"),
+         sex != "All",
+         diagnosis != "Cerebrovascular Disease") %>% 
+  dummy_cols(select_columns = c("admission_type", "age", "sex", "diagnosis"),
+             remove_first_dummy = TRUE,
+             remove_selected_columns = TRUE) %>% 
+  clean_names() %>% 
+  select(-starts_with("hbr_name"), -crude_rate, -easr)
+
+model17 <- lm(number_of_discharges ~ .,
+               data = activity_dummy_no_hb)
+```
+
+```{r}
+summary(model17)
+```
+
+Hmmm we're back down to 22%, guess this isn't a great approach. Might have to admit defeat. 
+
+## Fitting on total discharges
+
+```{r}
+activity_hb %>% 
+  filter(hbr_name == "Orkney") %>% 
+  filter(number_of_discharges != 0)
+```
+
+```{r}
+activity_hb_model <- activity_hb %>% 
+  mutate(start_fin_year = as.numeric(str_extract(financial_year, "^[0-9]{4}")), 
+         .after = financial_year) %>% 
+  filter(hbr != "S92000003" &
+           age == "All" &
+           sex == "All" &
+           admission_type == "All" &
+           diagnosis == "Cerebrovascular Disease") %>% 
+  select(start_fin_year, hbr_name, number_of_discharges) %>% 
+  dummy_cols(select_columns = "hbr_name",
+             remove_first_dummy = TRUE,
+             remove_selected_columns = TRUE) %>% 
+  clean_names()
+
+
+model18 <- lm(number_of_discharges ~ ., data = activity_hb_model)
+
+summary(model18)
+
+
+```
+
+The model gives EXACTLY this same results with or without dummy variables. 

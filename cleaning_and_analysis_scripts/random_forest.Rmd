@@ -271,6 +271,77 @@ plot(boost_activity, i = "admission_type")
 No idea what I'm doing here!
 
 
+## Train on first 8 years and then predict next 5 years
 
+```{r}
+activity_2009_2016 <- activity_hb_for_fitting %>% 
+  filter(start_fin_year <= 2016)
+
+activity_2017_2021 <- activity_hb_for_fitting %>% 
+  filter(start_fin_year >= 2017)
+```
+
+```{r}
+rf_classifier5 <- ranger(number_of_discharges ~ ., 
+                        data = activity_2009_2016, 
+                        importance = "impurity", 
+                        num.trees = 5000, 
+                        mtry = 5, 
+                        min.node.size = 5)
+
+rf_classifier5
+```
+
+```{r}
+activity_2017_2021_pred <- activity_2017_2021 %>%
+  mutate(pred = predict(rf_classifier5, data = activity_2017_2021)$predictions)
+```
+
+```{r}
+activity_2017_2021_pred %>% 
+  ggplot(aes(number_of_discharges, pred)) + 
+  geom_point(aes(colour = age)) +
+  labs(title = "Predicted vs Real Values for 2017 to 2021")
+```
+
+Add predicted values back into whole dataset to allow comparison
+
+```{r}
+# Renaming prediction column as number of discharges so we can bind rows back to 2009 to 2016 dataframe
+activity_2017_2021_for_adding <- activity_2017_2021_pred %>% 
+  select(-number_of_discharges) %>% 
+  rename(number_of_discharges = pred)
+
+# Adding datasets together
+activity_with_pred_added <- bind_rows(activity_2009_2016,
+                                     activity_2017_2021_for_adding)
+
+# the datasets to compare are activity_hb_for_fiting and activity_with_pred_added
+
+all_scotland <- activity_hb_for_fitting %>% 
+  group_by(start_fin_year) %>% 
+  summarise(total_discharges = sum(number_of_discharges))
+  
+  all_scotland_pred <- activity_with_pred_added %>% 
+  group_by(start_fin_year) %>% 
+  summarise(total_discharges = sum(number_of_discharges))
+  
+  ggplot(aes(start_fin_year, total_discharges)) +
+  geom_point() +
+  geom_smooth(method = lm)
+
+
+
+ggplot() +
+  geom_point(data = all_scotland, 
+             mapping = aes(start_fin_year, total_discharges)) +
+  geom_point(data = all_scotland_pred,
+             mapping = aes(start_fin_year, total_discharges), colour = "red")
+
+
+
+```
+
+This hasn't worked at all. The tree isn't doing anything to predict on the year increasing whcih is really disappointing. 
 
 

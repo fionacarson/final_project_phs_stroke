@@ -29,6 +29,7 @@ library(here)
 
 ```{r}
 source(here("theme_palette_etc/plot_theme.R"))
+source(here("theme_palette_etc/palette.R"))
 ```
 
 ```{r}
@@ -41,36 +42,62 @@ mortality_hb <- read_csv(here("clean_data/mortality_hb.csv"))
 
 There are two datasets which need analysed to answer this questions - the activity dataset which details the number of discharges and the mortality which details the number of deaths. It should be noted that one patient could have more than one discharge.
 
-The unadultered values are used for this analysis as we are looking for the most common stroke diagnosis which 
+The unadultered values are used for this analysis as we are looking for the most common stroke diagnosis.
 
 ```{r}
 activity_hb %>% 
+  filter(!financial_year %in% c("2009/10", "2010/11", "2011/12")) %>% 
   filter(hbr == "S92000003" &
           age == "All" &
           sex == "All" &
           admission_type == "All" &
           diagnosis != "Cerebrovascular Disease") %>% 
-  ggplot(aes(financial_year, number_of_discharges)) +
-  geom_col(aes(fill = diagnosis), position = "dodge") +
-  theme_fc() 
+  group_by(diagnosis) %>% 
+  summarise(mean_num_discharges = mean(number_of_discharges)) %>% 
+  mutate(diagnosis = fct_reorder(diagnosis, mean_num_discharges)) %>% 
+  ggplot(aes(diagnosis, mean_num_discharges)) +
+  geom_col(fill = c("#446e9b", "#999999", "#3cb521", "#e83e8c")) +
+  theme_fc() +
+  labs(title = "Discharges by Cerebrovascular Disease Diagnosis",
+       subtitle = "10 year average", 
+       y = "Annual Number of Discharges",
+       x = "CVD Diagnosis") +
+  coord_flip() +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) 
 ```
 
 Stroke is by far the most common diagnosis for patients who are discharged. 
 
+
+
 ```{r}
 mortality_hb %>% 
+  filter(year >= 2012) %>% 
   filter(hbr == "S92000003" &
           age == "All" &
           sex == "All" &
           diagnosis != "Cerebrovascular Disease") %>% 
-  ggplot(aes(year, number_of_deaths)) +
-  geom_col(aes(fill = diagnosis), position = "dodge") +
-  theme_fc() 
+  group_by(diagnosis) %>% 
+  summarise(mean_num_deaths = mean(number_of_deaths)) %>% 
+  mutate(diagnosis = fct_reorder(diagnosis, mean_num_deaths)) %>% 
+  ggplot(aes(diagnosis, mean_num_deaths)) +
+  geom_col(fill = c("#446e9b", "#999999", "#3cb521")) +
+  theme_fc() +
+  labs(title = "Cerebrovascular Disease Mortality",
+       subtitle = "10 year average", 
+       y = "Annual Number of Deaths",
+       x = "CVD Diagnosis") +
+  coord_flip() +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) 
 ```
+
+
 
 For the patients that die, stroke is also the most common diagnosis but now the "Other CVD" category is much higher than for patients that are discharged. 
 
 It is not easy to compare the death and discharge figures as they cover different time periods. Discharges are financial year and deaths are calendar year. 
+
+Incidence data was sources from excel files related to the PHS Stroke report but these only subcategorised cerebrovascular disease and stroke.
 
 ## Are there differences in diagnoses between different demographics?
 

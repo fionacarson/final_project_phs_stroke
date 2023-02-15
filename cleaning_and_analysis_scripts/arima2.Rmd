@@ -1,0 +1,100 @@
+---
+title: "Forecasting"
+output:
+  html_document:
+    toc: yes
+    toc_float: true
+    toc_depth: '2'
+    highlight: tango
+    df_print: paged
+---
+
+```{r}
+library(tidyverse)
+library(fable)
+library(tsibble)
+library(tsibbledata)
+# We also need to use the "urca" package to be able to use the ARIMA model
+library(urca)
+library(lubridate)
+```
+
+```{r}
+activity_hb <- read_csv(here("clean_data/activity_hb.csv")) 
+
+activity_ts <- activity_hb %>% 
+  mutate(start_fin_year = as.numeric(str_extract(financial_year, "^[0-9]{4}")), 
+         .after = financial_year) %>% 
+#  mutate(start_fin_year = as.Date(paste(start_fin_year, 4, 1, sep = "-"))) %>% 
+    filter(hbr_name == "Scotland",
+          sex != "All",
+           !age %in% c("All", "under 75"),
+           diagnosis == "Cerebrovascular Disease", 
+          admission_type == "All") %>% 
+  select(-financial_year) %>% 
+as_tsibble(key = c(age, sex), index = start_fin_year)
+```
+
+
+
+```{r}
+fit <- activity_ts %>%
+#  filter(age == "45-64") %>% 
+  model(
+    ets = ETS(number_of_discharges),
+    arima = ARIMA(number_of_discharges)
+  )
+fit
+```
+
+```{r}
+forecast_1 <- fit %>%
+  fabletools::forecast(h = 10)
+forecast_1
+
+```
+
+```{r}
+forecast_1 %>%
+  autoplot(activity_ts) +
+  theme(axis.line.y = element_line(),
+        panel.grid.major.y = element_line(linetype = "solid")) +
+  facet_grid(age ~ sex, scales = "free_y")
+```
+
+Just don't think there is enough datapoints. A quick google search talks of a min of 50, 
+
+## ARIMA with just health board
+
+```{r}
+activity_ts_hb_only <- activity_hb %>% 
+  mutate(start_fin_year = as.numeric(str_extract(financial_year, "^[0-9]{4}")), 
+         .after = financial_year) %>% 
+#  mutate(start_fin_year = as.Date(paste(start_fin_year, 4, 1, sep = "-"))) %>% 
+    filter(hbr_name != "Scotland",
+           sex == "All",
+           age == "All",
+           diagnosis == "Cerebrovascular Disease", 
+          admission_type == "All") %>% 
+  select(-financial_year) %>% 
+as_tsibble(key = c(hbr_name), index = start_fin_year)
+
+
+fit_hb_only <- activity_ts_hb_only %>%
+#  filter(age == "45-64") %>% 
+  model(
+#    ets = ETS(number_of_discharges),
+    arima = ARIMA(number_of_discharges)
+  )
+
+forecast_hb_only <- fit_hb_only %>%
+  fabletools::forecast(h = 10)
+
+
+forecast_hb_only %>%
+  autoplot(activity_ts_hb_only) +
+  theme(axis.line.y = element_line(),
+        panel.grid.major.y = element_line(linetype = "solid")) 
+```
+
+Ok - arima is definitely not appropriate for this data. Give up!
