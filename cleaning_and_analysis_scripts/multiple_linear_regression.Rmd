@@ -21,6 +21,7 @@ library(ggfortify)
 library(modelr)
 #library(relaimpo)
 library(glmulti)
+library(ggpubr)
 ```
 
 
@@ -52,7 +53,28 @@ activity_hb_for_fitting %>%
             total_easr = mean(easr)) %>% 
   ggplot(aes(start_fin_year, total_discharges)) +
   geom_point() +
-  geom_smooth(method = lm)
+  geom_smooth(method = lm) +
+  stat_regline_equation(aes(label = ..rr.label..))
+
+activity_hb_for_fitting %>% 
+  group_by(start_fin_year) %>% 
+  summarise(total_discharges = sum(number_of_discharges),
+            total_crude_rate = mean(crude_rate),
+            total_easr = mean(easr)) %>% 
+  ggplot(aes(start_fin_year, total_crude_rate)) +
+  geom_point() +
+  geom_smooth(method = lm) +
+  stat_regline_equation(aes(label = ..rr.label..))
+
+activity_hb_for_fitting %>% 
+  group_by(start_fin_year) %>% 
+  summarise(total_discharges = sum(number_of_discharges),
+            total_crude_rate = mean(crude_rate),
+            total_easr = mean(easr)) %>% 
+  ggplot(aes(start_fin_year, total_easr)) +
+  geom_point() +
+  geom_smooth(method = lm) +
+  stat_regline_equation(aes(label = ..rr.label..))
 ```
 
 The crude rate and easr are far from linear so I don't think we can use linear regression to predict those. Maybe it is more appropriate to predict based on the real numbers anyway. 
@@ -708,9 +730,69 @@ ggcorr(activity_hb_remaining_resid,
 ggpairs(activity_hb_remaining_resid, progress = FALSE)
 ```
 
-
-
 Even ggpairs is indicating nothing more worth adding. Forth Valley and Tayside have dots beside them which is the level below one star but lets not add them. 
+
+
+### Model 17 Crude rates
+
+
+```{r}
+model17 <- lm(crude_rate ~ 
+               diagnosis_stroke + 
+               hbr_name_greater_glasgow_clyde +
+               age_over_75 +
+               admission_type_transfer +
+               admission_type_emergency +
+               hbr_name_lanarkshire +
+               hbr_name_lothian +
+               hbr_name_western_isles +
+               hbr_name_orkney +
+               hbr_name_shetland +
+                age_65_74 +
+                age_45_64 +
+                hbr_name_borders +
+                hbr_name_dumfries_galloway +
+                diagnosis_subarachnoid_haemorrhage +
+                start_fin_year,
+               data = activity_hb_dummy)
+```
+
+```{r}
+summary(model17)
+```
+
+R2 of 0.34. Probably don't want all the health boards in there but look at the year it has a very low significance level and this is what we want to predict on. 
+
+### Model 18 easr
+
+
+```{r}
+model18 <- lm(easr ~ 
+               diagnosis_stroke + 
+               hbr_name_greater_glasgow_clyde +
+               age_over_75 +
+               admission_type_transfer +
+               admission_type_emergency +
+               hbr_name_lanarkshire +
+               hbr_name_lothian +
+               hbr_name_western_isles +
+               hbr_name_orkney +
+               hbr_name_shetland +
+                age_65_74 +
+                age_45_64 +
+                hbr_name_borders +
+                hbr_name_dumfries_galloway +
+                diagnosis_subarachnoid_haemorrhage +
+                start_fin_year,
+               data = activity_hb_dummy)
+```
+
+```{r}
+summary(model18)
+```
+
+Slightly better but year is not significant at all now. 
+
 
 ## Relative importance
 
@@ -1174,3 +1256,287 @@ summary(model18)
 ```
 
 The model gives EXACTLY this same results with or without dummy variables. 
+
+# Mortality
+
+```{r}
+mortality_hb <- read_csv(here("clean_data/mortality_hb.csv")) 
+```
+
+```{r}
+mortality_hb_for_fitting <- mortality_hb %>% 
+  # Remove all rows which are combinations of other rows
+  filter(hbr_name != "Scotland",
+         !age %in% c("All", "under 75"),
+         sex != "All",
+         diagnosis != "Cerebrovascular Disease") %>% 
+  select(-hbr)
+```
+
+```{r}
+mortality_hb_for_fitting %>% 
+  group_by(year) %>% 
+  summarise(total_deaths = sum(number_of_deaths),
+            total_crude_rate = mean(crude_rate),
+            total_easr = mean(easr)) %>% 
+  ggplot(aes(year, total_deaths)) +
+  geom_point() +
+  geom_smooth(method = lm) +
+  stat_regline_equation(aes(label = ..rr.label..))
+
+mortality_hb_for_fitting %>% 
+  group_by(year) %>% 
+  summarise(total_deaths = sum(number_of_deaths),
+            total_crude_rate = mean(crude_rate),
+            total_easr = mean(easr)) %>% 
+  ggplot(aes(year, total_crude_rate)) +
+  geom_point() +
+  geom_smooth(method = lm) +
+  stat_regline_equation(aes(label = ..rr.label..))
+
+mortality_hb_for_fitting %>% 
+  group_by(year) %>% 
+  summarise(total_deaths = sum(number_of_deaths),
+            total_crude_rate = mean(crude_rate),
+            total_easr = mean(easr)) %>% 
+  ggplot(aes(year, total_easr)) +
+  geom_point() +
+  geom_smooth(method = lm) +
+  stat_regline_equation(aes(label = ..rr.label..))
+```
+
+```{r}
+mortality_hb_dummy <- mortality_hb_for_fitting %>% 
+  dummy_cols(select_columns = c("hbr_name", "age", "sex", "diagnosis"),
+             remove_first_dummy = TRUE,
+             remove_selected_columns = TRUE) %>% 
+  clean_names()
+```
+
+
+```{r, message = FALSE, warning = FALSE}
+mortality_hb_dummy %>% 
+  select(-crude_rate, -easr, -starts_with("hbr_name")) %>% 
+  ggpairs(progress = FALSE)
+```
+Had to run health boards separately as there were too many variables. 
+
+```{r, message = FALSE, warning = FALSE}
+mortality_hb_dummy %>% 
+  select(-crude_rate, -easr, -starts_with(c("age", "diagnosis", "sex"))) %>% 
+  ggpairs(progress = FALSE)
+```
+
+### Model A age
+
+over 75 has the highest correlation at 0.513 so adding whole age category. 
+
+```{r}
+modelA <- lm(number_of_deaths ~ age_over_75 + age_65_74 + age_45_64, data = mortality_hb_dummy)
+```
+
+```{r}
+autoplot(modelA)
+```
+
+```{r}
+summary(modelA)
+```
+
+
+
+```{r}
+mortality_hb_remaining_resid <- mortality_hb_dummy %>% 
+  add_residuals(modelA) %>% 
+  select(-crude_rate, -easr, -starts_with("hbr_name"), -number_of_deaths, 
+         -starts_with("age"))
+
+
+ggpairs(mortality_hb_remaining_resid, progress = FALSE)
+```
+
+```{r}
+mortality_hb_remaining_resid <- mortality_hb_dummy %>% 
+  add_residuals(modelA) %>% 
+  select(-crude_rate, -easr, -starts_with(c("age", "diagnosis", "sex")), 
+         -number_of_deaths, -starts_with("age"))
+
+ggpairs(mortality_hb_remaining_resid, progress = FALSE)
+```
+
+Over 75 has correlation of 0.202
+Glasgow has correlation of 0.249 
+
+### Model B diagnosis
+
+stroke has highest correlation
+
+```{r}
+modelB <- lm(number_of_deaths ~ age_over_75 + age_65_74 + age_45_64 +
+             diagnosis_stroke + diagnosis_subarachnoid_haemorrhage, data = mortality_hb_dummy)
+```
+
+```{r}
+autoplot(modelB)
+```
+
+```{r}
+summary(modelB)
+```
+
+### Model C year
+
+Not a high correlation but we really need it in
+
+```{r}
+modelC <- lm(number_of_deaths ~ age_over_75 + age_65_74 + age_45_64 +
+             diagnosis_stroke + diagnosis_subarachnoid_haemorrhage + year, data = mortality_hb_dummy)
+```
+
+```{r}
+autoplot(modelC)
+```
+
+```{r}
+summary(modelC)
+```
+
+### Model D health boards
+
+```{r}
+modelD <- lm(number_of_deaths ~ age_over_75 + age_65_74 + age_45_64 +
+             diagnosis_stroke + diagnosis_subarachnoid_haemorrhage + year +
+               hbr_name_greater_glasgow_clyde +
+               hbr_name_lanarkshire +
+               hbr_name_lothian +
+               hbr_name_western_isles +
+               hbr_name_orkney +
+               hbr_name_shetland +
+                hbr_name_borders +
+                hbr_name_dumfries_galloway,
+             data = mortality_hb_dummy)
+```
+
+
+```{r}
+autoplot(modelD)
+```
+
+```{r}
+summary(modelD)
+```
+
+R2 of 0.45 which isn't great but better than for discharges (0.31).
+
+### Model E - all variables with crude rate
+
+```{r}
+modelE_data <- mortality_hb_dummy %>% 
+  select(-number_of_deaths, -easr)
+
+
+
+modelE <- lm(crude_rate ~ .,
+             data = modelE_data)
+
+summary(modelE)
+```
+
+Hmmm R2 of 0.5465 and it looks like heath boards are not significant. 
+
+### Model F - all variables with easr
+
+```{r}
+modelF_data <- mortality_hb_dummy %>% 
+  select(-number_of_deaths, -crude_rate, -starts_with("hbr"))
+
+
+
+modelF <- lm(easr ~ .,
+             data = modelF_data)
+
+summary(modelF)
+```
+
+Getting an R2 of 0.6164 which is pretty good!
+
+But what is this telling us. Sex is not significant and age 45 to 64 isn't significant. So we can predict 60% of the variance but we can't predict values at health board level. 
+
+## Prediction Intervals
+
+```{r}
+activity_2009_2016 <- activity_hb_dummy %>% 
+  filter(start_fin_year <= 2016)
+
+activity_2017_2021 <- activity_hb_dummy %>% 
+  filter(start_fin_year >= 2017)
+```
+
+
+```{r}
+activity_2017_2021_pred <- activity_2017_2021 %>% 
+  add_predictions(model16)
+
+summary(lm(pred ~ number_of_discharges, data = activity_2017_2021_pred))
+```
+
+```{r}
+results <- predict(model16, activity_2017_2021, interval = "predict")
+
+results2 <- bind_cols(activity_2017_2021, results)
+
+results2 %>% 
+  ggplot(data = results2) + 
+  geom_point(aes(number_of_discharges, fit)) +
+  geom_line(aes(number_of_discharges, lwr), colour = "red") +
+    geom_line(aes(number_of_discharges, upr), colour = "blue")
+```
+
+## Log?
+
+Checking whether we should be logging the predictor
+
+```{r}
+activity_hb %>% 
+  filter(number_of_discharges > 20) %>% 
+  ggplot(aes(number_of_discharges)) +
+  geom_bar()
+```
+
+```{r}
+activity_log <- activity_hb %>% 
+  filter(number_of_discharges >= 2) %>% 
+  mutate(log_discharges = log(number_of_discharges))
+
+activity_log %>% 
+#  filter(number_of_discharges > 20) %>% 
+  ggplot(aes(log_discharges)) +
+  geom_density()
+```
+
+```{r}
+incidence_log <- incidence %>% 
+    filter(incidence >= 1) %>% 
+  mutate(log_incidence = log(incidence))
+
+incidence_log %>% 
+  mutate(log_incidence = round(log_incidence, 2)) %>% 
+  ggplot(aes(log_incidence)) +
+  geom_bar()
+```
+
+Can't work out what is causing this biomodality - it is present in every age group, sex, health board and diagnosis.
+
+I think if it is bimodal we can't predict on it
+
+```{r}
+mortality_log <- mortality_hb %>% 
+    filter(number_of_deaths >= 1) %>% 
+  mutate(log_deaths = log(number_of_deaths))
+
+mortality_log %>% 
+  filter(number_of_deaths > 20) %>% 
+  ggplot(aes(number_of_deaths)) +
+  geom_density()
+```
+

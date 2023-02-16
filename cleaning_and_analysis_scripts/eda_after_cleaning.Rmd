@@ -19,6 +19,8 @@ There were a lot of missing values for Orkney, Shetland and Western Isles due to
 activity_hb <- read_csv(here("clean_data/activity_hb.csv")) 
 
 mortality_hb <- read_csv(here("clean_data/mortality_hb.csv")) 
+
+activity_ca <- read_csv(here("clean_data/activity_ca.csv")) 
 ```
 
 ```{r}
@@ -102,8 +104,28 @@ activity_hb %>%
 
 The crude rate and easr data shows a different pattern than the raw values. The number of discharges for 45-64 year olds and 65-74 years olds is similar but when this is adjusted for 100,000 of population (ie the crude rate) the number of discharges for 65-74 years olds is much higher. This is likely caused by the fact that the younger age range covers 20 years whereas the older one covers 10 years and also there will be fewer people in the older age range because people will have died. 
 
+### Age - incidence data
 
-#### Age and diagnosis
+```{r}
+incidence <- read_csv(here("clean_data/incidence.csv"))
+```
+
+
+```{r}
+incidence %>% 
+  filter(hbr_name == "Scotland",
+         sex == "All",
+         !age %in% c("All", "under 75"), 
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, incidence)) +
+  geom_col(aes(fill = age), position = "dodge")
+```
+
+
+The incidence data looks very similar to discharge data. 
+
+
+### Age - Discharge Data - Diagnosis
 
 ```{r}
 activity_hb %>% 
@@ -139,6 +161,68 @@ activity_hb %>%
 
 Even after age adjustment subarachnoid haemorrhage has a different pattern to the other diagnoses. The other conditions show a distinct age related trend, with more discharges as age increases. Subarachnoid haemorrhage shows similar levels of discharge across all three age groups over 45. 
 
+No need to show the data by year, let's show a 10 year average
+
+```{r, warning = FALSE, message = FALSE}
+activity_hb %>% 
+  mutate(diagnosis = factor(diagnosis, levels = c("Stroke", "TIAs and related syndromes",
+                                                  "Subarachnoid Haemorrhage",
+                                                  "Other CVD"))) %>% 
+  filter(hbr == "S92000003",
+         sex == "All",
+         admission_type == "All",
+         !age %in% c("All", "under 75"), 
+         diagnosis != "Cerebrovascular Disease") %>%
+# the group_by and summarise were inserted to get rid of horizontal white lines on columns in plot
+    group_by(age, diagnosis) %>% 
+  summarise(total_discharges = mean(number_of_discharges)) %>% 
+  ggplot(aes(age, total_discharges)) +
+  geom_col(aes(fill = diagnosis)) +
+  facet_wrap(~diagnosis, scales = "free_y") +
+  scale_fill_manual(values = c("#999999", "#f084b6", "#9e8fcb", "#6d95bf"))
+
+
+
+activity_hb %>% 
+  mutate(diagnosis = factor(diagnosis, levels = c("Stroke", 
+                                                  "TIAs and related syndromes",
+                                                  "Subarachnoid Haemorrhage",
+                                                  "Other CVD"))) %>% 
+  filter(hbr == "S92000003",
+         sex == "All",
+         admission_type == "All",
+         !age %in% c("All", "under 75"), 
+         diagnosis != "Cerebrovascular Disease") %>%
+# the group_by and summarise were inserted to get rid of horizontal white lines on columns in plot
+    group_by(age, diagnosis) %>% 
+  summarise(mean_crude_rate = mean(crude_rate)) %>% 
+  ggplot(aes(age, mean_crude_rate)) +
+  geom_col(aes(fill = diagnosis)) +
+  facet_wrap(~diagnosis, scales = "free_y") +
+  scale_fill_manual(values = c("#999999", "#f084b6", "#9e8fcb", "#6d95bf"))
+
+
+
+activity_hb %>% 
+  mutate(diagnosis = factor(diagnosis, levels = c("Stroke", 
+                                                  "TIAs and related syndromes",
+                                                  "Subarachnoid Haemorrhage",
+                                                  "Other CVD"))) %>% 
+  filter(hbr == "S92000003",
+         sex == "All",
+         admission_type == "All",
+         !age %in% c("All", "under 75"), 
+         diagnosis != "Cerebrovascular Disease") %>%
+# the group_by and summarise were inserted to get rid of horizontal white lines on columns in plot
+    group_by(age, diagnosis) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(age, mean_easr)) +
+  geom_col(aes(fill = diagnosis)) +
+  facet_wrap(~diagnosis, scales = "free_y") +
+  scale_fill_manual(values = c("#999999", "#f084b6", "#9e8fcb", "#6d95bf"))
+```
+
+
 
 Same data below but displayed differently. The plots faceted on diagnosis (as above) are more informative
 
@@ -153,6 +237,20 @@ activity_hb %>%
   geom_col(aes(fill = diagnosis), position = "dodge") +
   facet_wrap(~age, scales = "free_y")
 ```
+
+### Age - Incidence Data - Diagnosis
+
+```{r}
+incidence %>% 
+  filter(hbr_name == "Scotland",
+         sex == "All",
+         !age %in% c("All", "under 75")) %>% 
+  ggplot(aes(year, incidence)) +
+  geom_col(aes(fill = age), position = "dodge") +
+  facet_wrap(~diagnosis, scales = "free_y")
+```
+
+Because there are only 
 
 ### Sex - Discharge Data
 
@@ -187,37 +285,79 @@ activity_hb %>%
 
 
 
-```{r}
+```{r, warning = FALSE, message = FALSE}
 activity_hb %>% 
+  mutate(diagnosis = factor(diagnosis, levels = c("Stroke", "TIAs and related syndromes",
+                                                  "Subarachnoid Haemorrhage",
+                                                  "Other CVD"))) %>% 
   filter(hbr == "S92000003",
          sex != "All",
          admission_type == "All",
          age == "All", 
-         diagnosis != "Cerebrovascular Disease") %>% 
-  ggplot(aes(financial_year, number_of_discharges)) +
-  geom_col(aes(fill = sex), position = "dodge") +
-  facet_wrap(~diagnosis, scales = "free_y")
+         diagnosis != "Cerebrovascular Disease") %>%
+# the group_by and summarise were inserted to get rid of horizontal white lines on columns in plot
+    group_by(sex, diagnosis) %>% 
+  summarise(mean_discharges = mean(number_of_discharges)) %>% 
+  ggplot(aes(sex, mean_discharges)) +
+  geom_col(aes(fill = sex)) +
+  facet_wrap(~diagnosis, scales = "free_y") +
+  scale_fill_manual(values = c("#999999", "#6d95bf")) +
+  theme_fc() + 
+  theme(legend.position = "none",
+        # changes font size of faceted plot titles. 
+        strip.text = element_text(size = 14, colour = "grey30"))
+
+
 
 activity_hb %>% 
+  mutate(diagnosis = factor(diagnosis, levels = c("Stroke", 
+                                                  "TIAs and related syndromes",
+                                                  "Subarachnoid Haemorrhage",
+                                                  "Other CVD"))) %>% 
   filter(hbr == "S92000003",
          sex != "All",
          admission_type == "All",
-         age == "All", 
-         diagnosis != "Cerebrovascular Disease") %>% 
-  ggplot(aes(financial_year, crude_rate)) +
-  geom_col(aes(fill = sex), position = "dodge") +
-  facet_wrap(~diagnosis, scales = "free_y")
+          age == "All", 
+         diagnosis != "Cerebrovascular Disease") %>%
+# the group_by and summarise were inserted to get rid of horizontal white lines on columns in plot
+    group_by(sex, diagnosis) %>% 
+  summarise(mean_crude_rate = mean(crude_rate)) %>% 
+  ggplot(aes(sex, mean_crude_rate)) +
+  geom_col(aes(fill = sex)) +
+  facet_wrap(~diagnosis, scales = "free_y") +
+  scale_fill_manual(values = c("#999999", "#6d95bf")) +
+  theme_fc() + 
+  theme(legend.position = "none",
+        # changes font size of faceted plot titles. 
+        strip.text = element_text(size = 14, colour = "grey30"))
+
+
 
 activity_hb %>% 
+  mutate(diagnosis = factor(diagnosis, levels = c("Stroke", 
+                                                  "TIAs and related syndromes",
+                                                  "Subarachnoid Haemorrhage",
+                                                  "Other CVD"))) %>% 
   filter(hbr == "S92000003",
          sex != "All",
          admission_type == "All",
          age == "All", 
-         diagnosis != "Cerebrovascular Disease") %>% 
-  ggplot(aes(financial_year, easr)) +
-  geom_col(aes(fill = sex), position = "dodge") +
-  facet_wrap(~diagnosis, scales = "free_y")
+         diagnosis != "Cerebrovascular Disease") %>%
+# the group_by and summarise were inserted to get rid of horizontal white lines on columns in plot
+    group_by(sex, diagnosis) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(sex, mean_easr)) +
+  geom_col(aes(fill = sex)) +
+  facet_wrap(~diagnosis, scales = "free_y") +
+  scale_fill_manual(values = c("#999999", "#6d95bf")) +
+  theme_fc() + 
+  theme(legend.position = "none",
+        # changes font size of faceted plot titles. 
+        strip.text = element_text(size = 14, colour = "grey30"))
+
 ```
+
+
 
 
 ## Investigation into combining datasets
@@ -303,18 +443,141 @@ Ok so this works but not sure whether it is valid - also still need to convert c
 
 Is isn't clear what number of cases refers to in this questions. The wording is different from the other questions. The incidences by health board and council area are available from the excel pivot tables. Lets have a look at the data we have first and see how we can view it. 
 
+Combining Orkney, Shetland and Western Isles into one group called Islands
+
+```{r}
+islands <- activity_hb %>% 
+  filter(hbr_name %in% c("Orkney", "Shetland", "Western Isles")) %>% 
+  group_by(financial_year, admission_type, age, sex, diagnosis) %>% 
+  summarise(number_of_discharges = sum(number_of_discharges),
+            crude_rate = mean(crude_rate),
+            easr = mean(easr)) %>% 
+  mutate(hbr_name = "Islands")
+
+activity_hb_islands <- activity_hb %>% 
+  filter(!hbr_name %in% c("Orkney", "Shetland", "Western Isles")) %>% 
+  bind_rows(islands)
+
+activity_hb_islands %>% 
+  select(where(is.character)) %>% 
+  map(unique)
+
+```
+
+
+
 ```{r}
 activity_hb %>% 
-  filter(hbr != "S92000003",
+  filter(!financial_year %in% c("2009/10", "2010/11", "2011/12")) %>% 
+  filter(hbr == "S92000003" &
+          age == "All" &
+          sex == "All" &
+          admission_type == "All" &
+          diagnosis != "Cerebrovascular Disease") %>% 
+  group_by(diagnosis) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  mutate(diagnosis = fct_reorder(diagnosis, mean_easr)) %>% 
+  ggplot(aes(diagnosis, mean_easr)) +
+  geom_col(fill = c("#6d95bf", "#999999", "#9e8fcb", "#f084b6")) +
+  theme_fc() +
+  labs(title = "Discharges by Cerebrovascular Disease Diagnosis",
+       subtitle = "10 year average", 
+       y = "EASR",
+       x = "CVD Diagnosis") +
+  coord_flip() +
+  # code to wrap text so it goes over two lines
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) 
+
+
+
+activity_hb_islands %>% 
+  mutate(hbr_name = recode(hbr_name, "Greater Glasgow & Clyde" = "Grtr Glasgow & Clyde")) %>% 
+  filter(!financial_year %in% c("2009/10", "2010/11", "2011/12")) %>% 
+  filter(hbr_name != "Scotland",
+         sex == "All",
+         admission_type == "All",
+         age == "All", 
+         diagnosis != "Cerebrovascular Disease") %>% 
+  group_by(hbr_name, diagnosis) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  mutate(diagnosis = fct_reorder(diagnosis, mean_easr)) %>% 
+  ggplot(aes(diagnosis, mean_easr)) +
+  geom_col(aes(fill = diagnosis)) +
+  facet_wrap(~hbr_name) +
+  coord_flip() +
+  theme_fc() +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 20)) +
+  scale_fill_manual(values = c("#9e8fcb", "#6d95bf", "#f084b6", "#999999")) +
+  theme(legend.position = "none",
+        # changes font size of faceted plot titles. 
+        strip.text = element_text(size = 10, colour = "grey30"),
+        axis.text.y = element_text(size = 8)
+        )
+```
+
+What is this graph telling us and what do we want to know. 
+
+```{r}
+activity_hb_islands %>% 
+  mutate(hbr_name = recode(hbr_name, "Greater Glasgow & Clyde" = "Grtr Glasgow & Clyde")) %>% 
+  filter(!financial_year %in% c("2009/10", "2010/11", "2011/12")) %>% 
+  filter(hbr_name != "Scotland",
+         sex == "All",
+         admission_type == "All",
+         age == "All", 
+         diagnosis != "Cerebrovascular Disease") %>% 
+  group_by(hbr_name, diagnosis) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  mutate(diagnosis = fct_reorder(diagnosis, mean_easr)) %>% 
+#  group_by(hbr_name) %>% 
+#  mutate(total_easr = sum(mean_easr)) %>% 
+#  mutate(percent_easr = mean_easr / total_easr * 100) %>% 
+  ggplot(aes(diagnosis, mean_easr)) +
+  geom_col(aes(fill = hbr_name), position = "dodge")
+```
+
+I don't think either of the above graph are showing much of interest
+
+```{r}
+activity_hb_for_fitting <- activity_hb %>% 
+  mutate(start_fin_year = as.numeric(str_extract(financial_year, "^[0-9]{4}")), 
+         .after = financial_year) %>% 
+  select(-financial_year, -hbr)
+
+
+activity_hb_islands %>% 
+    mutate(start_fin_year = as.numeric(str_extract(financial_year, "^[0-9]{4}")), 
+         .after = financial_year) %>% 
+  select(-financial_year, -hbr) %>%
+  filter(hbr_name != "Scotland",
          sex == "All",
          admission_type == "All",
          age == "All", 
          diagnosis == "Cerebrovascular Disease") %>% 
-  ggplot(aes(financial_year, crude_rate)) +
-  geom_point() +
-  facet_wrap(~hbr_name)
-  
+  ggplot(aes(start_fin_year, easr)) +
+  geom_point(aes(colour = hbr_name)) +
+  geom_smooth(method = lm, colour = "black", linewidth = 0.4, se = FALSE) +
+  facet_wrap(~hbr_name) +  
+#  stat_regline_equation(aes(label = paste(..eq.label.., ..rr.label.., 
+#                                        sep = "~~~~"))) +
+# plots were coloured according to whether they changed by over or under 100 over the 13 year period
+      scale_colour_manual(values = c("green", "orange", "red", "orange","green", "red", "green", "orange","orange", "green", "red", "orange")) +
+#  theme_fc() +
+    theme(legend.position = "none",
+        # changes font size of faceted plot titles. 
+        strip.text = element_text(size = 10, colour = "grey30"),
+        axis.text.y = element_text(size = 8))
 ```
+
+```{r}
+health_boards
+```
+
+
+
+
+
+
 
 ```{r}
 activity_ca %>% 
