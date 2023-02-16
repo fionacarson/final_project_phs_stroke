@@ -14,6 +14,7 @@ output:
 library(sf)
 library(leaflet)
 library(tidyverse)
+library(htmlwidgets)
 ```
 
 ```{r}
@@ -31,107 +32,60 @@ health_board_totals <- activity_hb %>%
          admission_type == "All",
          age == "All", 
          diagnosis == "Cerebrovascular Disease",
-         financial_year == "2021/22")
+         financial_year == "2021/22") %>% 
+  select(-c("financial_year", "hbr", "admission_type", "age", "sex", "diagnosis")) %>% 
+  mutate(hbr_name = recode(hbr_name, "Ayrshire & Arran" = "Ayrshire and Arran",
+                           "Dumfries & Galloway" = "Dumfries and Galloway",
+                           "Greater Glasgow & Clyde" = "Greater Glasgow and Clyde"))
 
-left_join(scot_hb_shapefile, health_board_totals, )
+sf_stroke_data <- left_join(scot_hb_shapefile, health_board_totals, by = c("HBName" = "hbr_name"))
 ```
 
 
 https://r-graph-gallery.com/183-choropleth-map-with-leaflet.html
-
-
 
 In a choropleth map, each region has a color that represents the value of a numeric variable (population here).
 
 It is a good practice to check the distribution of this variable to understand what kind of color scale should be used. Using a histogram is often a good option for that:
 
 
-
 ```{r}
+# Prepare the text for tooltips:
+mytext <- paste(
+    "Health Board: ", sf_stroke_data$HBName,"<br/>", 
+    "EASR: ", sf_stroke_data$easr, "<br/>", 
+    sep="") %>%
+  lapply(htmltools::HTML)
 
+# originally used colorQuantile but colorNumeric creates a continuous color range 
+# for continous input which is what we have. 
+pal <- colorNumeric(
+  palette = "Purples",
+  domain = sf_stroke_data$easr)
 
-
-```
-
-```{r}
-# update this so it is stroke data
-
-updated_shapefile <- scot_hb_shapefile %>% 
-  mutate(population = c(1, 4, 7, 15, 2, 4, 6, 32, 8,5, 3, 9, 2,5))
-```
-
-```{r}
-# Create a color palette for the map:
-mypalette <- colorNumeric( palette="viridis", 
-                           domain=updated_shapefile$population, 
-                           na.color="transparent")
-
-mypalette(c(45,43))
-```
-
-
-```{r}
-
-
-
-leaflet(updated_shapefile) %>% 
+hb_discharge_easr <- leaflet(sf_stroke_data) %>% 
   addTiles()  %>% 
-#  setView( lat=10, lng=0 , zoom=2) %>%
-  addPolygons( 
-    fillColor = ~mypalette(POP2005), 
-    stroke=TRUE, 
-    fillOpacity = 0.9, 
-    color="white", 
-    weight=0.3,
+  setView( lat=57, lng=-5 , zoom=6) %>%
+  addPolygons(stroke = TRUE, 
+              color = "black", 
+              weight = 1,
+              fillOpacity = 0.8, 
+    #          smoothFactor = 0.5, 
+    #          fillColor = ~colorQuantile("Purples", easr)(easr) ,
+              fillColor = ~pal(easr),
     label = mytext,
     labelOptions = labelOptions( 
       style = list("font-weight" = "normal", padding = "3px 8px"), 
       textsize = "13px", 
-      direction = "auto"
-    )
-  )
-```
+      direction = "auto"))
 
+hb_discharge_easr 
 
-
-```{r}
-# Prepare the text for tooltips:
-mytext <- paste(
-    "Country: ", updated_shapefile$HBName,"<br/>", 
-    "Crude Rate: ", updated_shapefile$population, "<br/>", 
-    "XXXX: ", "xxxxx", 
-    sep="") %>%
-  lapply(htmltools::HTML)
-
-
-# Color by quantile
-m <- leaflet(updated_shapefile) %>% 
-  addTiles()  %>% 
-#  setView( lat=10, lng=0 , zoom=2) %>%
-  addPolygons(stroke = TRUE, 
-               color = "black", # without this blue lines, with gives none??
-              weight = 0.5,
-              fillOpacity = 0.5, 
-    #          smoothFactor = 0.5, 
-              fillColor = ~colorQuantile("YlOrRd", population)(population) ,
-    label = mytext
-#    labelOptions = labelOptions( 
- #     style = list("font-weight" = "normal", padding = "3px 8px"), 
-  #    textsize = "13px", 
-   #   direction = "auto"
-      
-    )
+# save the widget in a html file if needed.
+saveWidget(hb_discharge_easr, here("map_files/hb_discharge_easr.html"))
 
 # For fill colours
 # http://www.sthda.com/english/wiki/colors-in-r
-
-m
- 
-
-
-# save the widget in a html file if needed.
-library(htmlwidgets)
-saveWidget(m, here("map_files/choroplethLeaflet2.html"))
 ```
 
 

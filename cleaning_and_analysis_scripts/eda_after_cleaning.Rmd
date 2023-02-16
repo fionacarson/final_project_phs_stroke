@@ -539,12 +539,6 @@ activity_hb_islands %>%
 I don't think either of the above graph are showing much of interest
 
 ```{r}
-activity_hb_for_fitting <- activity_hb %>% 
-  mutate(start_fin_year = as.numeric(str_extract(financial_year, "^[0-9]{4}")), 
-         .after = financial_year) %>% 
-  select(-financial_year, -hbr)
-
-
 activity_hb_islands %>% 
     mutate(start_fin_year = as.numeric(str_extract(financial_year, "^[0-9]{4}")), 
          .after = financial_year) %>% 
