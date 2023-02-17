@@ -569,7 +569,7 @@ health_boards
 
 
 
-
+### Councils
 
 
 
@@ -586,6 +586,17 @@ activity_ca %>%
 ```
 
 
+What do the figures for 2021 look like - are they worth displaying on a map?
+
+```{r}
+activity_ca %>% 
+  filter(ca != "S92000003",
+         sex == "All",
+         financial_year == "2021/22",
+         admission_type == "All",
+         age == "All", 
+         diagnosis == "Cerebrovascular Disease")
+```
 
 
 

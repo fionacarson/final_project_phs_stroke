@@ -19,12 +19,15 @@ There were a lot of missing values for Orkney, Shetland and Western Isles due to
 
 ## Assumptions made during analysis
 
-To determine which diagnosis is most the number of diagnosis and number of deaths values were used, rather than the crude rates or easr. It was felt it was more important to know the actual number than a number adjusted for 100,000 of population (crude rate) or age adjusted (easr).
+To determine which diagnosis is most common the number of diagnosis and number of deaths values were used, rather than the crude rates or easr. It was felt it was more important to know the actual number than a number adjusted for 100,000 of population (crude rate) or age adjusted (easr).
 
 
 ```{r}
 library(tidyverse)
 library(here)
+library(sf)
+library(leaflet)
+library(htmlwidgets)
 ```
 
 ```{r}
@@ -46,13 +49,17 @@ The unadultered values are used for this analysis as we are looking for the most
 
 ```{r}
 activity_hb %>% 
+# filter so we only have most recent 10 years
   filter(!financial_year %in% c("2009/10", "2010/11", "2011/12")) %>% 
-  filter(hbr == "S92000003" &
+# filter so we have all Scotland, ages, sex and admission types but not the CVD 
+# total in diagnosis variable.
+    filter(hbr == "S92000003" &
           age == "All" &
           sex == "All" &
           admission_type == "All" &
           diagnosis != "Cerebrovascular Disease") %>% 
-  group_by(diagnosis) %>% 
+# group by diagnosis and then take the mean over the 10 year period
+    group_by(diagnosis) %>% 
   summarise(mean_num_discharges = mean(number_of_discharges)) %>% 
   mutate(diagnosis = fct_reorder(diagnosis, mean_num_discharges)) %>% 
   ggplot(aes(diagnosis, mean_num_discharges)) +
@@ -88,7 +95,7 @@ activity_hb %>%
   scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) 
 
 activity_hb %>% 
-  filter(!financial_year %in% c("2009/10", "2010/11", "2011/12")) %>% 
+ filter(!financial_year %in% c("2009/10", "2010/11", "2011/12")) %>% 
   filter(hbr == "S92000003" &
           age == "All" &
           sex == "All" &
@@ -124,7 +131,7 @@ mortality_hb %>%
   summarise(mean_num_deaths = mean(number_of_deaths)) %>% 
   mutate(diagnosis = fct_reorder(diagnosis, mean_num_deaths)) %>% 
   ggplot(aes(diagnosis, mean_num_deaths)) +
-  geom_col(fill = c("#446e9b", "#999999", "#3cb521")) +
+  geom_col(fill = c("#6d95bf", "#999999", "#9e8fcb")) +
   theme_fc() +
   labs(title = "Cerebrovascular Disease Mortality",
        subtitle = "10 year average", 
@@ -133,7 +140,6 @@ mortality_hb %>%
   coord_flip() +
   scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) 
 ```
-
 
 
 For the patients that die, stroke is also the most common diagnosis but now the "Other CVD" category is much higher than for patients that are discharged. 
@@ -149,9 +155,11 @@ Incidence data was sources from excel files related to the PHS Stroke report but
 ```{r, message = FALSE, warning = FALSE}
 activity_hb %>% 
   mutate(diagnosis = factor(diagnosis, levels = c("Stroke", 
-                                                  "TIAs and related syndromes",
                                                   "Subarachnoid Haemorrhage",
-                                                  "Other CVD"))) %>% 
+                                                  "Other CVD",
+                                                  "TIAs and related syndromes"
+                                                  ))) %>% 
+   filter(!financial_year %in% c("2009/10", "2010/11", "2011/12")) %>% 
   filter(hbr == "S92000003",
          sex == "All",
          admission_type == "All",
@@ -163,19 +171,22 @@ activity_hb %>%
   ggplot(aes(age, mean_easr)) +
   geom_col(aes(fill = diagnosis)) +
   facet_wrap(~diagnosis, scales = "free_y") +
-  scale_fill_manual(values = c("#999999", "#f084b6", "#9e8fcb", "#6d95bf")) +
+  scale_fill_manual(values = c("#999999", "#9e8fcb", "#6d95bf", "#f084b6")) +
   theme_fc() + 
   theme(legend.position = "none",
         # changes font size of faceted plot titles. 
-        strip.text = element_text(size = 14, colour = "grey30"))
+        strip.text = element_text(size = 14, colour = "grey30")) +
+  labs(title = "Number of Discharges by Age and CVD Type (EASR)",
+       subtitle = "10 year average")
 ```
 
 ### Sex
 
 ```{r, warning = FALSE, message = FALSE}
 activity_sex_diagnosis <- activity_hb %>% 
-  mutate(diagnosis = factor(diagnosis, levels = c("Stroke", 
-        "TIAs and related syndromes", "Subarachnoid Haemorrhage", "Other CVD"))) %>% 
+  mutate(diagnosis = factor(diagnosis, levels = c("Stroke", "Subarachnoid Haemorrhage",
+       "Other CVD",  "TIAs and related syndromes"))) %>% 
+     filter(!financial_year %in% c("2009/10", "2010/11", "2011/12")) %>% 
   filter(hbr == "S92000003",
          sex != "All",
          admission_type == "All",
@@ -195,7 +206,9 @@ activity_sex_diagnosis <- activity_hb %>%
   theme_fc() + 
   theme(legend.position = "none",
         # changes font size of faceted plot titles. 
-        strip.text = element_text(size = 14, colour = "grey30"))
+        strip.text = element_text(size = 14, colour = "grey30")) +
+    labs(title = "Number of Discharges by Sex and CVD Type",
+       subtitle = "10 year average")
 
   ggplot(activity_sex_diagnosis, aes(sex, mean_crude_rate)) +
   geom_col(aes(fill = sex)) +
@@ -214,14 +227,129 @@ activity_sex_diagnosis <- activity_hb %>%
   theme_fc() + 
   theme(legend.position = "none",
         # changes font size of faceted plot titles. 
-        strip.text = element_text(size = 14, colour = "grey30"))
+        strip.text = element_text(size = 14, colour = "grey30")) +
+    labs(title = "Number of Discharges by Sex and CVD Type (EASR)",
+       subtitle = "10 year average")
 
 ```
 
 
-## Q3 Health Board or Council
+
+
+## Q4 Mortality
+
+### Age
 
 ```{r}
+mortality_hb %>% 
+  mutate(diagnosis = factor(diagnosis, levels = c("Stroke", 
+                                                  "Subarachnoid Haemorrhage",
+                                                  "Other CVD"))) %>% 
+  filter(year > 2012,
+    hbr == "S92000003",
+         sex == "All",
+         !age %in% c("All", "under 75"), 
+         diagnosis != "Cerebrovascular Disease") %>%
+# the group_by and summarise were inserted to get rid of horizontal white lines on columns in plot
+    group_by(age, diagnosis) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(age, mean_easr)) +
+  geom_col(aes(fill = diagnosis)) +
+  facet_wrap(~diagnosis, scales = "free_y", nrow = 2) +
+  scale_fill_manual(values = c("#999999", "#9e8fcb", "#6d95bf")) +
+  theme_fc() + 
+  theme(legend.position = "none",
+        # changes font size of faceted plot titles. 
+        strip.text = element_text(size = 14, colour = "grey30")) +
+    labs(title = "Mortality by Age and CVD Type (EASR)",
+       subtitle = "10 year average")
+
+
+```
+
+### Sex
+
+```{r, warning = FALSE, message = FALSE}
+mortality_sex_diagnosis <- mortality_hb %>% 
+  mutate(diagnosis = factor(diagnosis, levels = c("Stroke", 
+        "Subarachnoid Haemorrhage", "Other CVD"))) %>% 
+  filter(year >2012) %>% 
+  filter(hbr == "S92000003",
+         sex != "All",
+         age == "All", 
+         diagnosis != "Cerebrovascular Disease") %>%
+  group_by(sex, diagnosis) %>% 
+  summarise(mean_deaths = mean(number_of_deaths),
+            mean_crude_rate = mean(crude_rate),
+            mean_easr = mean(easr))
+  
+  
+  ggplot(mortality_sex_diagnosis, aes(sex, mean_deaths)) +
+  geom_col(aes(fill = sex)) +
+  facet_wrap(~diagnosis, scales = "free_y", nrow = 2) +
+  scale_fill_manual(values = c("#999999", "#6d95bf")) +
+  theme_fc() + 
+  theme(legend.position = "none",
+        # changes font size of faceted plot titles. 
+        strip.text = element_text(size = 14, colour = "grey30")) +
+    labs(title = "Mortality by Sex and CVD Type",
+       subtitle = "10 year average")
+
+  ggplot(mortality_sex_diagnosis, aes(sex, mean_crude_rate)) +
+  geom_col(aes(fill = sex)) +
+  facet_wrap(~diagnosis, scales = "free_y") +
+  scale_fill_manual(values = c("#999999", "#6d95bf")) +
+  theme_fc() + 
+  theme(legend.position = "none",
+        # changes font size of faceted plot titles. 
+        strip.text = element_text(size = 14, colour = "grey30"))
+
+
+  ggplot(mortality_sex_diagnosis, aes(sex, mean_easr)) +
+  geom_col(aes(fill = sex)) +
+  facet_wrap(~diagnosis, scales = "free_y", nrow = 2) +
+  scale_fill_manual(values = c("#999999", "#6d95bf")) +
+  theme_fc() + 
+  theme(legend.position = "none",
+        # changes font size of faceted plot titles. 
+        strip.text = element_text(size = 14, colour = "grey30")) +
+    labs(title = "Mortality by Sex and CVD Type (EASR)",
+       subtitle = "10 year average")
+
+```
+
+
+
+## Q3 Health Board or Council
+
+### Population by health board
+
+```{r}
+hb_population <- read_csv(here("raw_data/health_board_populations.csv"))
+```
+
+```{r}
+
+
+
+```
+
+
+
+
+```{r}
+islands <- activity_hb %>% 
+  filter(hbr_name %in% c("Orkney", "Shetland", "Western Isles")) %>% 
+  group_by(financial_year, admission_type, age, sex, diagnosis) %>% 
+  summarise(number_of_discharges = sum(number_of_discharges),
+            crude_rate = mean(crude_rate),
+            easr = mean(easr)) %>% 
+  mutate(hbr_name = "Islands")
+
+activity_hb_islands <- activity_hb %>% 
+  filter(!hbr_name %in% c("Orkney", "Shetland", "Western Isles")) %>% 
+  bind_rows(islands)
+
 activity_hb_islands %>% 
     mutate(start_fin_year = as.numeric(str_extract(financial_year, "^[0-9]{4}")), 
          .after = financial_year) %>% 
@@ -238,7 +366,7 @@ activity_hb_islands %>%
 #  stat_regline_equation(aes(label = paste(..eq.label.., ..rr.label.., 
 #                                        sep = "~~~~"))) +
 # plots were coloured according to whether they changed by over or under 100 over the 13 year period
-      scale_colour_manual(values = c("green", "orange", "red", "orange","green", "red", "green", "orange","orange", "green", "red", "orange")) +
+      scale_colour_manual(values = c("#6d95bf", "grey30", "#f084b6", "grey30","#6d95bf", "#f084b6", "#6d95bf", "grey30","grey30", "#6d95bf", "#f084b6", "grey30")) +
 #  theme_fc() +
     theme(legend.position = "none",
         # changes font size of faceted plot titles. 
@@ -247,11 +375,65 @@ activity_hb_islands %>%
 ```
 
 
+### Leaflet
+
+```{r}
+# simplified shapefile created for group project
+scot_hb_shapefile <- st_read(here::here("map_files/scot_hb_shapefile_simplified.shp"))
+```
 
 
+```{r}
+health_board_totals <- activity_hb %>% 
+  filter(hbr != "S92000003",
+         sex == "All",
+         admission_type == "All",
+         age == "All", 
+         diagnosis == "Cerebrovascular Disease",
+         financial_year == "2021/22") %>% 
+  select(-c("financial_year", "hbr", "admission_type", "age", "sex", "diagnosis")) %>% 
+  mutate(hbr_name = recode(hbr_name, "Ayrshire & Arran" = "Ayrshire and Arran",
+                           "Dumfries & Galloway" = "Dumfries and Galloway",
+                           "Greater Glasgow & Clyde" = "Greater Glasgow and Clyde"))
 
+sf_stroke_data <- left_join(scot_hb_shapefile, health_board_totals, by = c("HBName" = "hbr_name"))
+```
 
+```{r}
+# Prepare the text for tooltips:
+mytext <- paste(
+    "Health Board: ", sf_stroke_data$HBName,"<br/>", 
+    "EASR: ", sf_stroke_data$easr, "<br/>", 
+    sep="") %>%
+  lapply(htmltools::HTML)
 
+# originally used colorQuantile but colorNumeric creates a continuous color range 
+# for continuous input which is what we have. 
+pal <- colorNumeric(
+  palette = "Purples",
+  domain = sf_stroke_data$easr)
 
+hb_discharge_easr <- leaflet(sf_stroke_data) %>% 
+  addTiles()  %>% 
+  setView( lat=57, lng=-5 , zoom=6) %>%
+  addPolygons(stroke = TRUE, 
+              color = "black", 
+              weight = 1,
+              fillOpacity = 0.8, 
+    #          smoothFactor = 0.5, 
+    #          fillColor = ~colorQuantile("Purples", easr)(easr) ,
+              fillColor = ~pal(easr),
+    label = mytext,
+    labelOptions = labelOptions( 
+      style = list("font-weight" = "normal", padding = "3px 8px"), 
+      textsize = "13px", 
+      direction = "auto"))
 
+hb_discharge_easr 
 
+# save the widget in a html file 
+saveWidget(hb_discharge_easr, here("map_files/hb_discharge_easr.html"))
+
+# For fill colours
+# http://www.sthda.com/english/wiki/colors-in-r
+```

@@ -17,6 +17,8 @@ library(tidyverse)
 library(htmlwidgets)
 ```
 
+## Health Board - Discharges
+
 ```{r}
 activity_hb <- read_csv(here("clean_data/activity_hb.csv"))
 
@@ -26,7 +28,7 @@ scot_hb_shapefile <- st_read(here::here("map_files/scot_hb_shapefile_simplified.
 
 
 ```{r}
-health_board_totals <- activity_hb %>% 
+discharge_hb_totals <- activity_hb %>% 
   filter(hbr != "S92000003",
          sex == "All",
          admission_type == "All",
@@ -38,7 +40,9 @@ health_board_totals <- activity_hb %>%
                            "Dumfries & Galloway" = "Dumfries and Galloway",
                            "Greater Glasgow & Clyde" = "Greater Glasgow and Clyde"))
 
-sf_stroke_data <- left_join(scot_hb_shapefile, health_board_totals, by = c("HBName" = "hbr_name"))
+sf_hb_stroke_data <- left_join(scot_hb_shapefile, discharge_hb_totals, by = c("HBName" = "hbr_name"))
+
+rm(activity_hb, discharge_hb_totals)
 ```
 
 
@@ -51,19 +55,19 @@ It is a good practice to check the distribution of this variable to understand w
 
 ```{r}
 # Prepare the text for tooltips:
-mytext <- paste(
-    "Health Board: ", sf_stroke_data$HBName,"<br/>", 
-    "EASR: ", sf_stroke_data$easr, "<br/>", 
+mytext_dis_hb <- paste(
+    "Health Board: ", sf_hb_stroke_data$HBName,"<br/>", 
+    "EASR: ", sf_hb_stroke_data$easr, "<br/>", 
     sep="") %>%
   lapply(htmltools::HTML)
 
 # originally used colorQuantile but colorNumeric creates a continuous color range 
 # for continous input which is what we have. 
-pal <- colorNumeric(
+pal_dis_hb <- colorNumeric(
   palette = "Purples",
-  domain = sf_stroke_data$easr)
+  domain = sf_hb_stroke_data$easr)
 
-hb_discharge_easr <- leaflet(sf_stroke_data) %>% 
+discharge_hb_easr <- leaflet(sf_hb_stroke_data) %>% 
   addTiles()  %>% 
   setView( lat=57, lng=-5 , zoom=6) %>%
   addPolygons(stroke = TRUE, 
@@ -72,17 +76,18 @@ hb_discharge_easr <- leaflet(sf_stroke_data) %>%
               fillOpacity = 0.8, 
     #          smoothFactor = 0.5, 
     #          fillColor = ~colorQuantile("Purples", easr)(easr) ,
-              fillColor = ~pal(easr),
-    label = mytext,
+              fillColor = ~pal_dis_hb(easr),
+    label = mytext_dis_hb,
     labelOptions = labelOptions( 
       style = list("font-weight" = "normal", padding = "3px 8px"), 
       textsize = "13px", 
-      direction = "auto"))
+      direction = "auto",
+      opacity = 0.75))
 
-hb_discharge_easr 
+discharge_hb_easr 
 
 # save the widget in a html file if needed.
-saveWidget(hb_discharge_easr, here("map_files/hb_discharge_easr.html"))
+saveWidget(discharge_hb_easr, here("map_files/discharge_hb_easr.html"))
 
 # For fill colours
 # http://www.sthda.com/english/wiki/colors-in-r
@@ -90,33 +95,215 @@ saveWidget(hb_discharge_easr, here("map_files/hb_discharge_easr.html"))
 
 
 
+## Council - Discharges
 
+```{r}
+activity_ca <- read_csv(here("clean_data/activity_ca.csv"))
 
+council_sf <- st_read(here::here("map_files/council_shapefile_scotland/pub_las.shp"))
+
+council_sf <- st_transform(council_sf, "+proj=longlat +ellps=WGS84 +datum=WGS84")
+
+council_sf_simplified <- rmapshaper::ms_simplify(input = council_sf,
+                                           keep = 0.001,
+                                           keep_shapes = TRUE)
+
+rm(council_sf)
+```
 
 
 
 ```{r}
-  output$map <- renderLeaflet({
-    
-    data_to_map <- summary_tab_map_data %>% 
-      filter(metric == input$map_data_to_display)
-    
-    leaflet(scot_hb_shapefile) %>% 
-      # addTiles adds scotland map from OpenStreetMap  
-      addTiles() %>% 
-      # addPolygons adds health board shape from shapefile
-      addPolygons(color = "black", weight = 1) %>% 
-      # fit scotland onto map using fitBounds once we know the dimensions of the map
-      fitBounds(lat1 = 55, lng1 = -7, lat2 = 61, lng2 = 0) %>% 
-      addCircleMarkers(lng = health_board_lat_lon$Longitude, 
-                       lat = health_board_lat_lon$Latitude,
-                       radius = data_to_map$scaled_value,
-                       color = "purple",
-                       weight = 3,
-                       opacity = 0.8,
-                       label = health_board_lat_lon$HBName)
-  }) 
-  
-  output$summary_table <- renderTable(summary_tab_table_data)
+discharge_ca_totals <- activity_ca %>% 
+  filter(ca != "S92000003",
+         sex == "All",
+         age == "All", 
+         admission_type == "All",
+         diagnosis == "Cerebrovascular Disease",
+         financial_year == "2021/22") %>% 
+  select(-c("financial_year", "ca","age", "admission_type", "sex", "diagnosis",
+            "hb", "hb_name")) %>% 
+  mutate(ca_name = recode(ca_name, "Na h-Eileanan Siar" = "Eilean Siar"))
+
+sf_ca_stroke_data <- left_join(council_sf_simplified, discharge_ca_totals, 
+                                    by = c("local_auth" = "ca_name"))
+
+rm(activity_ca, discharge_ca_totals, council_sf_simplified)
 ```
+
+
+```{r}
+mytext_dis_ca <- paste(
+    "Council Area: ", sf_ca_stroke_data$local_aut,"<br/>", 
+    "EASR: ", sf_ca_stroke_data$easr, "<br/>", 
+    sep="") %>%
+  lapply(htmltools::HTML)
+
+pal_dis_ca <- colorNumeric(
+  palette = "Purples",
+  domain = sf_ca_stroke_data$easr)
+
+discharge_ca_easr <- leaflet(sf_ca_stroke_data) %>% 
+  addTiles()  %>% 
+  setView( lat=57, lng=-5 , zoom=6) %>%
+  addPolygons(stroke = TRUE, 
+              color = "black", 
+              weight = 1,
+              fillOpacity = 0.8, 
+              fillColor = ~pal_dis_ca(easr),
+    label = mytext_dis_ca,
+    labelOptions = labelOptions( 
+      style = list("font-weight" = "normal", padding = "3px 8px"), 
+      textsize = "13px", 
+      direction = "auto",
+      opacity = 0.75))
+
+discharge_ca_easr
+
+saveWidget(discharge_ca_easr, here("map_files/discharge_ca_easr.html"))
+```
+
+## Health Board - Deaths
+
+
+```{r}
+mortality_hb <- read_csv(here("clean_data/mortality_hb.csv")) 
+```
+
+
+```{r}
+mortality_hb_totals <- mortality_hb %>% 
+  filter(hbr != "S92000003",
+         sex == "All",
+         age == "All", 
+         diagnosis == "Cerebrovascular Disease",
+         year == 2021) %>% 
+  select(-c("year", "hbr", "age", "sex", "diagnosis")) %>% 
+  mutate(hbr_name = recode(hbr_name, "Ayrshire & Arran" = "Ayrshire and Arran",
+                           "Dumfries & Galloway" = "Dumfries and Galloway",
+                           "Greater Glasgow & Clyde" = "Greater Glasgow and Clyde"))
+
+sf_hb_mort_data <- left_join(scot_hb_shapefile, mortality_hb_totals, 
+                             by = c("HBName" = "hbr_name")) %>% 
+  mutate(crude_rate = round(crude_rate, 0),
+         easr = round(easr, 0))
+
+rm(mortality_hb, mortality_hb_totals)
+```
+
+
+```{r}
+# Prepare the text for tooltips:
+mytext_mort_hb <- paste(
+    "Health Board: ", sf_hb_mort_data$HBName,"<br/>", 
+    "EASR: ", sf_hb_mort_data$easr, "<br/>", 
+    "Deaths: ", sf_hb_mort_data$number_of_deaths, 
+    sep="") %>%
+  lapply(htmltools::HTML)
+
+# originally used colorQuantile but colorNumeric creates a continuous color range 
+# for continous input which is what we have. 
+pal_mort_hb <- colorNumeric(
+  palette = "Purples",
+  domain = sf_hb_mort_data$easr)
+
+mort_hb_easr <- leaflet(sf_hb_mort_data) %>% 
+  addTiles()  %>% 
+  setView( lat=57, lng=-5 , zoom=6) %>%
+  addPolygons(stroke = TRUE, 
+              color = "black", 
+              weight = 1,
+              fillOpacity = 0.8, 
+    #          smoothFactor = 0.5, 
+    #          fillColor = ~colorQuantile("Purples", easr)(easr) ,
+              fillColor = ~pal_mort_hb(easr),
+    label = mytext_mort_hb,
+    labelOptions = labelOptions( 
+      style = list("font-weight" = "normal", padding = "3px 8px"), 
+      textsize = "13px", 
+      direction = "auto",
+      opacity = 0.75))
+
+mort_hb_easr 
+
+# save the widget in a html file if needed.
+saveWidget(mort_hb_easr, here("map_files/mort_hb_easr.html"))
+```
+
+## Council - Deaths
+
+```{r}
+mortality_ca <- read_csv(here("clean_data/mortality_ca.csv")) 
+
+council_sf <- st_read(here::here("map_files/council_shapefile_scotland/pub_las.shp"))
+
+council_sf <- st_transform(council_sf, "+proj=longlat +ellps=WGS84 +datum=WGS84")
+
+council_sf_simplified <- rmapshaper::ms_simplify(input = council_sf,
+                                           keep = 0.001,
+                                           keep_shapes = TRUE)
+
+rm(council_sf)
+
+```
+
+```{r}
+mortality_ca_totals <- mortality_ca %>% 
+  filter(ca != "S92000003",
+         sex == "All",
+         age == "All", 
+         diagnosis == "Cerebrovascular Disease",
+         year == 2021) %>% 
+  select(-c("year", "ca", "age", "sex", "diagnosis", "hb", "hb_name")) %>% 
+  mutate(ca_name = recode(ca_name, "Na h-Eileanan Siar" = "Eilean Siar"))
+
+sf_ca_mort_data <- left_join(council_sf_simplified, mortality_ca_totals, 
+                             by = c("local_auth" = "ca_name")) %>% 
+  mutate(crude_rate = round(crude_rate, 0),
+         easr = round(easr, 0))
+
+#rm(mortality_ca, mortality_ca_totals, council_sf_simplified)
+
+
+```
+
+
+```{r}
+# Prepare the text for tooltips:
+mytext_mort_ca <- paste(
+    "Health Board: ", sf_ca_mort_data$local_auth,"<br/>", 
+    "EASR: ", sf_ca_mort_data$easr, "<br/>", 
+    "Deaths: ", sf_ca_mort_data$number_of_deaths, 
+    sep="") %>%
+  lapply(htmltools::HTML)
+
+# originally used colorQuantile but colorNumeric creates a continuous color range 
+# for continous input which is what we have. 
+pal_mort_ca <- colorNumeric(
+  palette = "Purples",
+  domain = sf_ca_mort_data$easr)
+
+mort_ca_easr <- leaflet(sf_ca_mort_data) %>% 
+  addTiles()  %>% 
+  setView( lat=57, lng=-5 , zoom=6) %>%
+  addPolygons(stroke = TRUE, 
+              color = "black", 
+              weight = 1,
+              fillOpacity = 0.8, 
+    #          smoothFactor = 0.5, 
+    #          fillColor = ~colorQuantile("Purples", easr)(easr) ,
+              fillColor = ~pal_mort_ca(easr),
+    label = mytext_mort_ca,
+    labelOptions = labelOptions( 
+      style = list("font-weight" = "normal", padding = "3px 8px"), 
+      textsize = "13px", 
+      direction = "auto",
+    opacity = 0.75))
+
+mort_ca_easr 
+
+# save the widget in a html file if needed.
+saveWidget(mort_ca_easr, here("map_files/mort_ca_easr.html"))
+```
+
 
