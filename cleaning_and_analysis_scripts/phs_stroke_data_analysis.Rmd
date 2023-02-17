@@ -238,6 +238,24 @@ activity_sex_diagnosis <- activity_hb %>%
 
 ## Q4 Mortality
 
+### Mortality by year
+
+```{r}
+mortality_hb %>% 
+  filter(hbr == "S92000003",
+         sex == "All",
+         age == "All", 
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, easr)) +
+  geom_point() +
+  theme_fc() #+
+ # scale_y_continuous(limits = c(2000, 5000))
+```
+
+
+
+
+
 ### Age
 
 ```{r}
@@ -329,50 +347,29 @@ hb_population <- read_csv(here("raw_data/health_board_populations.csv"))
 ```
 
 ```{r}
-
-
-
+hb_population %>% 
+  mutate(hb_name = fct_reorder(hb_name, population)) %>% 
+ggplot(aes(hb_name, population)) +
+  geom_col() +
+  coord_flip()
 ```
 
 
 
 
-```{r}
-islands <- activity_hb %>% 
-  filter(hbr_name %in% c("Orkney", "Shetland", "Western Isles")) %>% 
-  group_by(financial_year, admission_type, age, sex, diagnosis) %>% 
-  summarise(number_of_discharges = sum(number_of_discharges),
-            crude_rate = mean(crude_rate),
-            easr = mean(easr)) %>% 
-  mutate(hbr_name = "Islands")
 
-activity_hb_islands <- activity_hb %>% 
-  filter(!hbr_name %in% c("Orkney", "Shetland", "Western Isles")) %>% 
-  bind_rows(islands)
 
-activity_hb_islands %>% 
-    mutate(start_fin_year = as.numeric(str_extract(financial_year, "^[0-9]{4}")), 
-         .after = financial_year) %>% 
-  select(-financial_year, -hbr) %>%
-  filter(hbr_name != "Scotland",
-         sex == "All",
-         admission_type == "All",
-         age == "All", 
-         diagnosis == "Cerebrovascular Disease") %>% 
-  ggplot(aes(start_fin_year, easr)) +
-  geom_point(aes(colour = hbr_name)) +
-  geom_smooth(method = lm, colour = "black", linewidth = 0.4, se = FALSE) +
-  facet_wrap(~hbr_name) +  
-#  stat_regline_equation(aes(label = paste(..eq.label.., ..rr.label.., 
-#                                        sep = "~~~~"))) +
-# plots were coloured according to whether they changed by over or under 100 over the 13 year period
-      scale_colour_manual(values = c("#6d95bf", "grey30", "#f084b6", "grey30","#6d95bf", "#f084b6", "#6d95bf", "grey30","grey30", "#6d95bf", "#f084b6", "grey30")) +
-#  theme_fc() +
-    theme(legend.position = "none",
-        # changes font size of faceted plot titles. 
-        strip.text = element_text(size = 10, colour = "grey30"),
-        axis.text.y = element_text(size = 8))
-```
+
+
+
+
+
+
+
+
+
+
+
 
 
 ### Leaflet

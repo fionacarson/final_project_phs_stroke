@@ -353,3 +353,13 @@ rm(mortality_other_cvd, mortality_stroke_TIA_haemorrhage, mortality_cvd_only)
 mortality_ca <- left_join(mortality_ca, council_area_names_clean, by = "ca")
 
 write_csv(mortality_ca, "clean_data/mortality_ca.csv")
+
+
+# council population ------------------------------------------------------
+
+ca_population <- read_csv("raw_data/council-area-profiles-dataset-with-copyright_population-estimates.csv") %>% 
+  clean_names() %>% 
+  rename("council" = "council_area")
+
+
+

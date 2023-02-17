@@ -458,10 +458,6 @@ activity_hb_islands <- activity_hb %>%
   filter(!hbr_name %in% c("Orkney", "Shetland", "Western Isles")) %>% 
   bind_rows(islands)
 
-activity_hb_islands %>% 
-  select(where(is.character)) %>% 
-  map(unique)
-
 ```
 
 
@@ -515,28 +511,29 @@ activity_hb_islands %>%
         )
 ```
 
-What is this graph telling us and what do we want to know. 
+What is this graph telling us and what do we want to know. Its not interesting and isn't what question is asking. 
 
 ```{r}
-activity_hb_islands %>% 
-  mutate(hbr_name = recode(hbr_name, "Greater Glasgow & Clyde" = "Grtr Glasgow & Clyde")) %>% 
-  filter(!financial_year %in% c("2009/10", "2010/11", "2011/12")) %>% 
-  filter(hbr_name != "Scotland",
+activity_hb %>% 
+    mutate(start_fin_year = as.numeric(str_extract(financial_year, "^[0-9]{4}")), 
+         .after = financial_year) %>% 
+  select(-financial_year, -hbr) %>%
+    filter(hbr_name == "Scotland",
          sex == "All",
-         admission_type == "All",
-         age == "All", 
-         diagnosis != "Cerebrovascular Disease") %>% 
-  group_by(hbr_name, diagnosis) %>% 
-  summarise(mean_easr = mean(easr)) %>% 
-  mutate(diagnosis = fct_reorder(diagnosis, mean_easr)) %>% 
-#  group_by(hbr_name) %>% 
-#  mutate(total_easr = sum(mean_easr)) %>% 
-#  mutate(percent_easr = mean_easr / total_easr * 100) %>% 
-  ggplot(aes(diagnosis, mean_easr)) +
-  geom_col(aes(fill = hbr_name), position = "dodge")
+         admission_type == "All", 
+         age == "All",
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(start_fin_year, easr)) +
+  geom_point() +
+  scale_y_continuous(limits = c(500, 700))
+  
+
+
+
 ```
 
-I don't think either of the above graph are showing much of interest
+
+The easr goes up and down for various health boards. 
 
 ```{r}
 activity_hb_islands %>% 
@@ -555,7 +552,7 @@ activity_hb_islands %>%
 #  stat_regline_equation(aes(label = paste(..eq.label.., ..rr.label.., 
 #                                        sep = "~~~~"))) +
 # plots were coloured according to whether they changed by over or under 100 over the 13 year period
-      scale_colour_manual(values = c("green", "orange", "red", "orange","green", "red", "green", "orange","orange", "green", "red", "orange")) +
+      scale_colour_manual(values = c("#6d95bf", "grey30", "#f084b6", "grey30","#6d95bf", "#f084b6", "#6d95bf", "grey30","grey30", "#6d95bf", "#f084b6", "grey30")) +
 #  theme_fc() +
     theme(legend.position = "none",
         # changes font size of faceted plot titles. 
@@ -563,15 +560,9 @@ activity_hb_islands %>%
         axis.text.y = element_text(size = 8))
 ```
 
-```{r}
-health_boards
-```
-
-
+What decides whether a region is going up or down. It looks like the ones with the highest easr are going up the most. 
 
 ### Councils
-
-
 
 ```{r}
 activity_ca %>% 
@@ -582,20 +573,118 @@ activity_ca %>%
          diagnosis == "Cerebrovascular Disease") %>% 
   ggplot(aes(financial_year, easr)) +
   geom_point() +
-  facet_wrap(~ca_name)
+  facet_wrap(~ca_name, scale = "free_y")
+```
+
+This is a bit all over the place - not sure I can do anything with this. 
+
+
+Mortality by health board
+
+```{r}
+islands_mortality <- mortality_hb %>% 
+  filter(hbr_name %in% c("Orkney", "Shetland", "Western Isles")) %>% 
+  group_by(year, age, sex, diagnosis) %>% 
+  summarise(number_of_deaths = sum(number_of_deaths),
+            crude_rate = mean(crude_rate),
+            easr = mean(easr)) %>% 
+  mutate(hbr_name = "Islands")
+
+mortality_hb_islands <- mortality_hb %>% 
+  filter(!hbr_name %in% c("Orkney", "Shetland", "Western Isles")) %>% 
+  bind_rows(islands_mortality)
+
+mortality_hb_islands %>% 
+  filter(hbr_name != "Scotland",
+         sex == "All",
+         age == "All", 
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, easr)) +
+  geom_point(aes(colour = hbr_name)) +
+  geom_smooth(method = lm, colour = "black", linewidth = 0.4, se = FALSE) +
+  facet_wrap(~hbr_name) +  
+#  stat_regline_equation(aes(label = paste(..eq.label.., ..rr.label.., 
+#                                        sep = "~~~~"))) +
+# plots were coloured according to whether they changed by over or under 100 over the 13 year period
+#      scale_colour_manual(values = c("#6d95bf", "grey30", "#f084b6", "grey30","#6d95bf", #"#f084b6", "#6d95bf", "grey30","grey30", "#6d95bf", "#f084b6", "grey30")) +
+#  theme_fc() +
+    theme(legend.position = "none",
+        # changes font size of faceted plot titles. 
+        strip.text = element_text(size = 10, colour = "grey30"),
+        axis.text.y = element_text(size = 8))
 ```
 
 
-What do the figures for 2021 look like - are they worth displaying on a map?
+Mortality is going down everywhere - not very interesting. What is happening at council level. 
+
+
+
 
 ```{r}
-activity_ca %>% 
-  filter(ca != "S92000003",
+mortality_ca %>% 
+  filter(ca_name != "Scotland",
          sex == "All",
-         financial_year == "2021/22",
-         admission_type == "All",
          age == "All", 
-         diagnosis == "Cerebrovascular Disease")
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, easr)) +
+  geom_point(aes(colour = ca_name)) +
+  geom_smooth(method = lm, colour = "black", linewidth = 0.4, se = FALSE) +
+  facet_wrap(~ca_name) +  
+#  stat_regline_equation(aes(label = paste(..eq.label.., ..rr.label.., 
+#                                        sep = "~~~~"))) +
+# plots were coloured according to whether they changed by over or under 100 over the 13 year period
+#      scale_colour_manual(values = c("#6d95bf", "grey30", "#f084b6", "grey30","#6d95bf", #"#f084b6", "#6d95bf", "grey30","grey30", "#6d95bf", "#f084b6", "grey30")) +
+#  theme_fc() +
+    theme(legend.position = "none",
+        # changes font size of faceted plot titles. 
+        strip.text = element_text(size = 10, colour = "grey30"),
+        axis.text.y = element_text(size = 8))
+```
+
+
+# Sex differences by health board
+
+```{r}
+islands <- activity_hb %>% 
+  filter(hbr_name %in% c("Orkney", "Shetland", "Western Isles")) %>% 
+  group_by(financial_year, admission_type, age, sex, diagnosis) %>% 
+  summarise(number_of_discharges = sum(number_of_discharges),
+            crude_rate = mean(crude_rate),
+            easr = mean(easr)) %>% 
+  mutate(hbr_name = "Islands")
+
+activity_hb_islands <- activity_hb %>% 
+  filter(!hbr_name %in% c("Orkney", "Shetland", "Western Isles")) %>% 
+  bind_rows(islands)
+
+
+activity_hb_islands %>% 
+    filter(hbr_name != "Scotland",
+             financial_year == "2021/22",
+         sex != "All",
+         age == "All", 
+         admission_type == "All",
+         diagnosis == "Cerebrovascular Disease") %>% 
+  
+  ggplot(aes(hbr_name, easr)) +
+  geom_col(aes(fill = sex), position = "fill") +
+  coord_flip()
+```
+
+Not really a hugh difference in discharges by sex by health board.
+
+
+
+```{r}
+mortality_hb_islands %>% 
+    filter(hbr_name != "Scotland",
+             year == 2021,
+         sex != "All",
+         age == "All", 
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(hbr_name, easr)) +
+  geom_col(aes(fill = sex), position = "fill") +
+  coord_flip() 
 ```
 
 
@@ -613,7 +702,7 @@ mortality_hb %>%
   filter(hbr == "S92000003",
          sex == "All",
          age == "All", 
-         diagnosis != "Cerebrovascular Disease") %>% 
+         diagnosis == "Cerebrovascular Disease") %>% 
   ggplot(aes(year, number_of_deaths)) +
   geom_col(aes(fill = diagnosis), position = "dodge")
 ```
@@ -710,6 +799,10 @@ mortality_hb %>%
   geom_col(aes(fill = sex), position = "dodge")
 ```
 
+
+The graph below shows the random spike in male deaths from subarachnoid haemorrhage in 2020.
+
+
 ```{r}
 mortality_hb %>% 
   filter(hbr == "S92000003",
@@ -721,18 +814,65 @@ mortality_hb %>%
   facet_wrap(~diagnosis, scales = "free_y", nrow = 2)
 ```
 
-Investigating spike in males deaths from sub haem in 2020
+Digging into data further shows it was men in the 45-64 age range
+
+```{r}
+mortality_hb %>% 
+  filter(hbr == "S92000003",
+         sex != "All",
+         !age %in% c("All", "under 75"), 
+         diagnosis == "Subarachnoid Haemorrhage") %>% 
+  ggplot(aes(year, number_of_deaths)) +
+  geom_col(aes(fill = sex), position = "dodge") +
+  facet_wrap(~ age, scales = "free_y", nrow = 2)
+```
+
+The spike appears to be caused by an increase in cases in Glasgow and lothian, ayrshire and borders in males compared to females.
+
+```{r}
+mortality_hb %>% 
+  filter(hbr != "S92000003",
+         sex != "All",
+         age == "45-64", 
+         diagnosis == "Subarachnoid Haemorrhage") %>% 
+  ggplot(aes(year, number_of_deaths)) +
+  geom_col(aes(fill = sex), position = "dodge") +
+  facet_wrap(~ hbr_name, scales = "free_y", nrow = 4)
+```
+
+
+
 
 
 ```{r}
 mortality_hb %>% 
   filter(hbr != "S92000003",
-         sex == "Male",
-         !age %in% c("All", "under 75"), 
-         diagnosis == "Subarachnoid Haemorrhage") %>% 
+         sex == "All",
+         age == "All", 
+         diagnosis == "Cerebrovascular Disease") %>% 
   ggplot(aes(year, number_of_deaths)) +
-  geom_col(aes(fill = sex), position = "dodge") +
+  geom_col() +
+  facet_wrap(~hbr_name)
+
+
+mortality_hb %>% 
+  filter(hbr != "S92000003",
+         sex == "All",
+         age == "All", 
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, crude_rate)) +
+  geom_col() +
+  facet_wrap(~hbr_name)
+
+
+
+mortality_hb %>% 
+  filter(hbr != "S92000003",
+         sex == "All",
+         age == "All", 
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, easr)) +
+  geom_col() +
   facet_wrap(~hbr_name)
 ```
 
-We see the spike in Glasgow, Dumfries, Forth Valley and Lothian. 

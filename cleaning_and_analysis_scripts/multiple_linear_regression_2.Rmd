@@ -1,0 +1,337 @@
+---
+title: "Multiple Linear Regression 2"
+output:
+  html_document:
+    toc: yes
+    toc_float: true
+    toc_depth: '2'
+    highlight: tango
+    df_print: paged
+---
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+library(fastDummies)
+library(GGally)
+library(ggfortify)
+library(modelr)
+#library(relaimpo)
+library(glmulti)
+library(ggpubr)
+```
+
+
+```{r}
+activity_hb <- read_csv(here("clean_data/activity_hb.csv")) 
+activity_ca <- read_csv(here("clean_data/activity_ca.csv")) 
+mortality_hb <- read_csv(here("clean_data/mortality_hb.csv")) 
+mortality_ca <- read_csv(here("clean_data/mortality_ca.csv")) 
+```
+
+
+
+Lets try and build 8 models for mortality, activity vs health board and council. Do all these by raw data and easr. 
+
+Need to have year in there as we want to predict on year. 
+
+## 1 Activity, health board, raw data
+
+```{r}
+activity_hb_for_fitting <- activity_hb %>% 
+  mutate(start_fin_year = as.numeric(str_extract(financial_year, "^[0-9]{4}")), 
+         .after = financial_year) %>% 
+  select(-financial_year, -hbr, -crude_rate, -easr) %>% 
+  # Remove all rows which are combinations of other rows
+  filter(hbr_name != "Scotland",
+         admission_type != "All",
+         !age %in% c("All", "under 75"),
+         sex != "All",
+         diagnosis != "Cerebrovascular Disease") 
+```
+
+### Model 1a - with everything 0.31
+
+```{r}
+model1a <- lm(number_of_discharges ~ ., data = activity_hb_for_fitting)
+
+autoplot(model1a)
+
+summary(model1a)
+```
+
+### Model 1b - with everything -  logged discharges 0.68
+
+```{r}
+model1b <- lm(log(1 + number_of_discharges) ~ ., data = activity_hb_for_fitting)
+
+autoplot(model1b)
+
+summary(model1b)
+```
+
+Hmmm - seems too good to be true??
+Plots don't look great but its categorical variables. Need to check predictions. 
+The year is very insignificant. 
+
+Can we split data into high number of discharges and low number of discharges. 
+What about getting rid of Orkney, Shetland and WI.
+Removing all cases < 0, 1 or 2 but then how do we predict in these areas. How do I get rid of missing data compared to zeros can I go back to original data and remove ones with c statistical flag?
+
+### Model 1c - removing all data that was originally converted to zero 0.7
+
+```{r}
+activity_hb_na_drop <- read_csv(here("clean_data/activity_hb_na_dropped.csv")) %>% 
+  clean_names() %>% 
+ mutate(start_fin_year = as.numeric(str_extract(financial_year, "^[0-9]{4}")), 
+         .after = financial_year) %>% 
+  select(-financial_year, -hbr, -crude_rate, -easr) %>% 
+  # Remove all rows which are combinations of other rows
+  filter(hbr_name != "Scotland",
+         admission_type != "All",
+         !age %in% c("All", "under 75"),
+         sex != "All",
+         diagnosis != "Cerebrovascular Disease") 
+
+
+model1c <- lm(log(1 + number_of_discharges) ~ ., data = activity_hb_na_drop)
+
+autoplot(model1c)
+
+summary(model1c)
+```
+
+This R2 looks really good but I doubt it will be great for predicting? Year isn't signficant and the slope is tiny.
+would it make any difference if we changed eg. 2019 to 19?
+Could we change year to sqaure or log or something
+
+
+### Model 1d - as above with year squared
+
+Tried squaring year but results were terrible so tried logging
+
+
+```{r}
+model_1d_data <- activity_hb_na_drop %>% 
+  mutate(year_log = log(start_fin_year)) %>% 
+  select(-start_fin_year)
+
+
+model1d <- lm(log(1 + number_of_discharges) ~ ., data = model_1d_data)
+
+autoplot(model1d)
+
+summary(model1d)
+
+```
+
+Hmm still not helping. 
+
+We should probably try predicting though as it might be ok - 
+
+Model 1b was the best model from this set but I have concerns about the insignificance of the year. 
+
+
+
+
+
+
+
+
+## 2 Activity, health board, easr
+
+```{r}
+activity_hb_for_fitting_easr <- activity_hb %>% 
+  mutate(start_fin_year = as.numeric(str_extract(financial_year, "^[0-9]{4}")), 
+         .after = financial_year) %>% 
+  select(-financial_year, -hbr, -crude_rate, -number_of_discharges) %>% 
+  # Remove all rows which are combinations of other rows
+  filter(hbr_name != "Scotland",
+         admission_type != "All",
+         !age %in% c("All", "under 75"),
+         sex != "All",
+         diagnosis != "Cerebrovascular Disease") 
+```
+
+
+
+
+```{r}
+model2a <- lm(log(1 + easr) ~ ., data = activity_hb_for_fitting_easr)
+
+autoplot(model2a)
+
+summary(model2a)
+```
+
+I am loving the look of this model - the year has 1 star for significance and is below 0.05. 
+
+The problem is that I think this means that for every increase in year the easr decreases by 0.006 which is basically zero. 
+Oh hang on the easr is logged. 
+For Glasgow, female, stroke, elective over 75 in 2012 easr = 39 and in 2020 = 37
+
+The real values are 2012 = 29.5 and 2020 = 6.8 but it is very far from a linear relationship
+
+```{r}
+activity_hb_for_fitting_easr %>% 
+  filter(sex == "Female",
+         admission_type == "Elective",
+         age == "over 75", 
+         diagnosis == "Stroke",
+         hbr_name == "Greater Glasgow & Clyde")
+```
+
+What if we just prepare a model with year and health board
+
+### Model 2b
+
+```{r}
+model2b <- lm(log(1 + easr) ~ ., data = activity_hb_for_fitting_easr)
+
+autoplot(model2b)
+
+summary(model2b)
+```
+
+log(easr) ~ start_fin_year gives R2 -0.005982
+with easr not logged the R2 is 6e06!!
+
+## 3 Death by health board and number of deaths
+
+```{r}
+mortality_hb_for_fitting <- mortality_hb %>% 
+select(-hbr, -crude_rate, -easr) %>% 
+  # Remove all rows which are combinations of other rows
+  filter(hbr_name != "Scotland",
+         !age %in% c("All", "under 75"),
+         sex != "All",
+         diagnosis != "Cerebrovascular Disease") 
+```
+
+### Model 3a 0.46
+
+
+```{r}
+model3a <- lm((number_of_deaths) ~ ., data = mortality_hb_for_fitting)
+
+autoplot(model3a)
+
+summary(model3a)
+```
+
+We have an R2 of 0.46 but our year is looking good. We hae 2 stars, however the number of deaths is only changing by -0.27 each year. 
+
+### Model 3b logged number of deaths 0.675
+
+```{r}
+model3b <- lm((log(1 + number_of_deaths)) ~ ., data = mortality_hb_for_fitting)
+
+autoplot(model3b)
+
+summary(model3b)
+```
+
+Nice model R2 is 0.675 but year isn't very significant
+
+
+## 4 Mortality and easr
+
+```{r}
+mortality_hb_for_fitting_easr <- mortality_hb %>% 
+select(-hbr, -crude_rate, -number_of_deaths) %>% 
+  # Remove all rows which are combinations of other rows
+  filter(hbr_name != "Scotland",
+         !age %in% c("All", "under 75"),
+         sex != "All",
+         diagnosis != "Cerebrovascular Disease") 
+```
+
+### Model 4a
+
+```{r}
+model4a <- lm((log(1 + easr)) ~ ., data = mortality_hb_for_fitting_easr)
+
+autoplot(model4a)
+
+summary(model4a)
+```
+
+R2 good, year very significant but a low value -0.016716
+The easr is logged but I still don't think it will make much difference. 
+The health board doesn't seemt to make much difference in this model. 
+
+### Model 4b removing health board
+
+```{r}
+model4b <- lm((log(1 + easr)) ~ year + age + diagnosis, data = mortality_hb_for_fitting_easr)
+
+autoplot(model4b)
+
+summary(model4b)
+```
+
+```{r}
+mortality_hb_for_fitting_easr %>% 
+    filter(hbr_name != "Scotland",
+         !age %in% c("All", "under 75"),
+         sex != "All",
+         diagnosis != "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, easr)) +
+  geom_jitter() +
+  scale_y_continuous(limits = c(0, 20))
+
+mortality_hb_for_fitting_easr %>% 
+    filter(hbr_name != "Scotland",
+         !age %in% c("All", "under 75"),
+         sex != "All",
+         diagnosis != "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, easr)) +
+  geom_jitter() +
+  scale_y_continuous(limits = c(20, 150))
+
+mortality_hb_for_fitting_easr %>% 
+    filter(hbr_name != "Scotland",
+         !age %in% c("All", "under 75"),
+         sex != "All",
+         diagnosis != "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, easr)) +
+  geom_jitter() +
+  scale_y_continuous(limits = c(150, 2000))
+
+```
+
+looks like the biomodal split occurs at 200
+
+This is really interesting but I don't know how we can feed this split in easr into the model as this is what we want to predict on. Would you put in the variables of interest and it would direct you to the appropriate model
+
+```{r}
+mortality_hb_for_fitting_easr %>% 
+    filter(hbr_name != "Scotland",
+         !age %in% c("All", "under 75"),
+         sex != "All",
+         diagnosis != "Cerebrovascular Disease",
+         easr <= 20) %>% 
+#  group_by(year) %>% 
+  ggplot(aes(year, easr)) +
+  geom_boxplot()
+
+mortality_hb_for_fitting_easr %>% 
+    filter(hbr_name != "Scotland",
+         !age %in% c("All", "under 75"),
+         sex != "All",
+         diagnosis != "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, easr)) +
+  geom_jitter() +
+  scale_y_continuous(limits = c(20, 150))
+
+mortality_hb_for_fitting_easr %>% 
+    filter(hbr_name != "Scotland",
+         !age %in% c("All", "under 75"),
+         sex != "All",
+         diagnosis != "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, easr)) +
+  geom_jitter() +
+  scale_y_continuous(limits = c(150, 2000))
+```
+

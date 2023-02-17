@@ -1,5 +1,5 @@
 ---
-title: "Time Series Forecasting"
+title: "Multiple Linear Regression"
 output:
   html_document:
     toc: yes
@@ -78,6 +78,8 @@ activity_hb_for_fitting %>%
 ```
 
 The crude rate and easr are far from linear so I don't think we can use linear regression to predict those. Maybe it is more appropriate to predict based on the real numbers anyway. 
+
+This might be wrong I think John said there was no requirement for data to be linear. 
 
 When a line if fitted to the number of discharge data it looks better than expected. 
 

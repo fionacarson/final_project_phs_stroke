@@ -21,6 +21,7 @@ library(htmlwidgets)
 
 ```{r}
 activity_hb <- read_csv(here("clean_data/activity_hb.csv"))
+mortality_hb <- read_csv(here("clean_data/mortality_hb.csv")) 
 
 # simplified shapefile created for group project
 scot_hb_shapefile <- st_read(here::here("map_files/scot_hb_shapefile_simplified.shp"))
@@ -28,6 +29,7 @@ scot_hb_shapefile <- st_read(here::here("map_files/scot_hb_shapefile_simplified.
 
 
 ```{r}
+# Adding discharge data to shapefile
 discharge_hb_totals <- activity_hb %>% 
   filter(hbr != "S92000003",
          sex == "All",
@@ -38,11 +40,37 @@ discharge_hb_totals <- activity_hb %>%
   select(-c("financial_year", "hbr", "admission_type", "age", "sex", "diagnosis")) %>% 
   mutate(hbr_name = recode(hbr_name, "Ayrshire & Arran" = "Ayrshire and Arran",
                            "Dumfries & Galloway" = "Dumfries and Galloway",
-                           "Greater Glasgow & Clyde" = "Greater Glasgow and Clyde"))
+                           "Greater Glasgow & Clyde" = "Greater Glasgow and Clyde")) %>% 
+  rename("discharge_crude_rate" = "crude_rate",
+         "discharge_easr" = "easr")
 
 sf_hb_stroke_data <- left_join(scot_hb_shapefile, discharge_hb_totals, by = c("HBName" = "hbr_name"))
 
-rm(activity_hb, discharge_hb_totals)
+# Adding mortality data to shapefile
+mortality_hb_totals <- mortality_hb %>% 
+  filter(hbr != "S92000003",
+         sex == "All",
+         age == "All", 
+         diagnosis == "Cerebrovascular Disease",
+         year == 2021) %>% 
+  select(-c("year", "hbr", "age", "sex", "diagnosis")) %>% 
+  mutate(hbr_name = recode(hbr_name, "Ayrshire & Arran" = "Ayrshire and Arran",
+                           "Dumfries & Galloway" = "Dumfries and Galloway",
+                           "Greater Glasgow & Clyde" = "Greater Glasgow and Clyde")) %>%   rename("mortality_crude_rate" = "crude_rate",
+         "mortality_easr" = "easr")
+
+sf_hb_discharge_mort_data <- left_join(sf_hb_stroke_data, mortality_hb_totals, 
+                             by = c("HBName" = "hbr_name")) %>% 
+  mutate(discharge_crude_rate = round(discharge_crude_rate, 0),
+         discharge_easr = round(discharge_easr, 0),
+         mortality_crude_rate = round(mortality_crude_rate, 0),
+         mortality_easr = round(mortality_easr, 0))
+
+rm(activity_hb, discharge_hb_totals, mortality_hb, mortality_hb_totals,
+   scot_hb_shapefile, sf_hb_stroke_data)
+
+st_write(sf_hb_discharge_mort_data, "sf_hb_discharge_mort.shp", driver="ESRI Shapefile")
+
 ```
 
 
@@ -54,10 +82,13 @@ It is a good practice to check the distribution of this variable to understand w
 
 
 ```{r}
+
+
+
 # Prepare the text for tooltips:
 mytext_dis_hb <- paste(
-    "Health Board: ", sf_hb_stroke_data$HBName,"<br/>", 
-    "EASR: ", sf_hb_stroke_data$easr, "<br/>", 
+    "Health Board: ", sf_hb_discharge_mort_data$HBName,"<br/>", 
+    "EASR: ", sf_hb_discharge_mort_data$discharge_easr, "<br/>", 
     sep="") %>%
   lapply(htmltools::HTML)
 
@@ -65,9 +96,9 @@ mytext_dis_hb <- paste(
 # for continous input which is what we have. 
 pal_dis_hb <- colorNumeric(
   palette = "Purples",
-  domain = sf_hb_stroke_data$easr)
+  domain = sf_hb_discharge_mort_data$discharge_easr)
 
-discharge_hb_easr <- leaflet(sf_hb_stroke_data) %>% 
+discharge_hb_easr <- leaflet(sf_hb_discharge_mort_data) %>% 
   addTiles()  %>% 
   setView( lat=57, lng=-5 , zoom=6) %>%
   addPolygons(stroke = TRUE, 
@@ -76,7 +107,7 @@ discharge_hb_easr <- leaflet(sf_hb_stroke_data) %>%
               fillOpacity = 0.8, 
     #          smoothFactor = 0.5, 
     #          fillColor = ~colorQuantile("Purples", easr)(easr) ,
-              fillColor = ~pal_dis_hb(easr),
+              fillColor = ~pal_dis_hb(discharge_easr),
     label = mytext_dis_hb,
     labelOptions = labelOptions( 
       style = list("font-weight" = "normal", padding = "3px 8px"), 

@@ -1,0 +1,331 @@
+Council area,Year,ICD codes,Cause,Cause label,Number,Percent,Sex,Total deaths
+Scotland,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,1653,5.2,Males,31798
+Scotland,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,2175,6.8,Females,31789
+Scotland,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,1288,4.1,Males,31798
+Scotland,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,1499,4.7,Females,31789
+Scotland,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,1986,6.2,Males,31798
+Scotland,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,4060,12.8,Females,31789
+Scotland,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,4350,13.7,Males,31798
+Scotland,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,2698,8.5,Females,31789
+Scotland,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,1970,6.2,Males,31798
+Scotland,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,1989,6.3,Females,31789
+Aberdeen City,2021,X40-X49,Accidental poisoning,Accidental poisoning,39,3.5,Males,1127
+Aberdeen City,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,41,3.6,Males,1127
+Aberdeen City,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,78,6.9,Females,1130
+Aberdeen City,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,43,3.8,Females,1130
+Aberdeen City,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,61,5.4,Males,1127
+Aberdeen City,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,130,11.5,Females,1130
+Aberdeen City,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,120,10.6,Males,1127
+Aberdeen City,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,102,9,Females,1130
+Aberdeen City,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,81,7.2,Males,1127
+Aberdeen City,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,72,6.4,Females,1130
+Aberdeenshire,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,82,6.2,Males,1331
+Aberdeenshire,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,105,7.9,Females,1322
+Aberdeenshire,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,87,6.5,Males,1331
+Aberdeenshire,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,163,12.3,Females,1322
+Aberdeenshire,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,173,13,Males,1331
+Aberdeenshire,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,115,8.7,Females,1322
+Aberdeenshire,2021,C50,Malignant neoplasm of breast,Breast cancer,51,3.9,Females,1322
+Aberdeenshire,2021,C61,Malignant neoplasm of prostate,Prostate cancer,54,4.1,Males,1331
+Aberdeenshire,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,83,6.2,Males,1331
+Aberdeenshire,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,82,6.2,Females,1322
+Angus,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,48,6.5,Males,734
+Angus,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,47,5.8,Females,812
+Angus,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,32,3.9,Females,812
+Angus,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,55,7.5,Males,734
+Angus,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,132,16.3,Females,812
+Angus,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,82,11.2,Males,734
+Angus,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,70,8.6,Females,812
+Angus,2021,C61,Malignant neoplasm of prostate,Prostate cancer,43,5.9,Males,734
+Angus,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,52,7.1,Males,734
+Angus,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,39,4.8,Females,812
+Argyll and Bute,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,27,4.6,Males,587
+Argyll and Bute,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,39,6.8,Females,570
+Argyll and Bute,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,23,4,Females,570
+Argyll and Bute,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,42,7.2,Males,587
+Argyll and Bute,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,80,14,Females,570
+Argyll and Bute,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,78,13.3,Males,587
+Argyll and Bute,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,46,8.1,Females,570
+Argyll and Bute,2021,C18-C21,"Malignant neoplasm of colon, sigmoid, rectum and anus",Colorectal cancer,28,4.8,Males,587
+Argyll and Bute,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,32,5.5,Males,587
+Argyll and Bute,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,43,7.5,Females,570
+City of Edinburgh,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,143,6.2,Males,2318
+City of Edinburgh,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,164,7.1,Females,2298
+City of Edinburgh,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,87,3.8,Males,2318
+City of Edinburgh,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,104,4.5,Females,2298
+City of Edinburgh,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,142,6.1,Males,2318
+City of Edinburgh,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,325,14.1,Females,2298
+City of Edinburgh,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,303,13.1,Males,2318
+City of Edinburgh,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,185,8.1,Females,2298
+City of Edinburgh,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,132,5.7,Males,2318
+City of Edinburgh,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,130,5.7,Females,2298
+Clackmannanshire,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,19,5.4,Males,349
+Clackmannanshire,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,27,8.6,Females,315
+Clackmannanshire,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,18,5.7,Females,315
+Clackmannanshire,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,28,8,Males,349
+Clackmannanshire,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,39,12.4,Females,315
+Clackmannanshire,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,65,18.6,Males,349
+Clackmannanshire,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,36,11.4,Females,315
+Clackmannanshire,2021,C61,Malignant neoplasm of prostate,Prostate cancer,17,4.9,Males,349
+Clackmannanshire,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,14,4,Males,349
+Clackmannanshire,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,25,7.9,Females,315
+Dumfries and Galloway,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,50,4.5,Males,1114
+Dumfries and Galloway,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,72,7,Females,1034
+Dumfries and Galloway,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,55,4.9,Males,1114
+Dumfries and Galloway,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,48,4.6,Females,1034
+Dumfries and Galloway,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,80,7.2,Males,1114
+Dumfries and Galloway,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,162,15.7,Females,1034
+Dumfries and Galloway,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,156,14,Males,1114
+Dumfries and Galloway,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,98,9.5,Females,1034
+Dumfries and Galloway,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,63,5.7,Males,1114
+Dumfries and Galloway,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,52,5,Females,1034
+Dundee City,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,46,4.9,Males,933
+Dundee City,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,57,6.1,Females,930
+Dundee City,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,44,4.7,Males,933
+Dundee City,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,50,5.4,Females,930
+Dundee City,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,62,6.6,Males,933
+Dundee City,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,133,14.3,Females,930
+Dundee City,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,131,14,Males,933
+Dundee City,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,67,7.2,Females,930
+Dundee City,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,72,7.7,Males,933
+Dundee City,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,63,6.8,Females,930
+East Ayrshire,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,54,6.6,Males,822
+East Ayrshire,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,46,5.5,Females,838
+East Ayrshire,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,34,4.1,Males,822
+East Ayrshire,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,41,4.9,Females,838
+East Ayrshire,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,47,5.7,Males,822
+East Ayrshire,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,78,9.3,Females,838
+East Ayrshire,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,123,15,Males,822
+East Ayrshire,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,84,10,Females,838
+East Ayrshire,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,54,6.6,Males,822
+East Ayrshire,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,45,5.4,Females,838
+East Dunbartonshire,2021,I47-I49,Cardiac arrhythmias,Cardiac arrhythmias,16,2.7,Females,593
+East Dunbartonshire,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,24,4.2,Males,576
+East Dunbartonshire,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,53,8.9,Females,593
+East Dunbartonshire,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,52,9,Males,576
+East Dunbartonshire,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,80,13.5,Females,593
+East Dunbartonshire,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,84,14.6,Males,576
+East Dunbartonshire,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,46,7.8,Females,593
+East Dunbartonshire,2021,C61,Malignant neoplasm of prostate,Prostate cancer,27,4.7,Males,576
+East Dunbartonshire,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,32,5.6,Males,576
+East Dunbartonshire,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,37,6.2,Females,593
+East Lothian,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,35,6,Males,580
+East Lothian,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,41,6.8,Females,606
+East Lothian,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,30,5.2,Males,580
+East Lothian,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,46,7.9,Males,580
+East Lothian,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,88,14.5,Females,606
+East Lothian,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,80,13.8,Males,580
+East Lothian,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,39,6.4,Females,606
+East Lothian,2021,C18-C21,"Malignant neoplasm of colon, sigmoid, rectum and anus",Colorectal cancer,28,4.6,Females,606
+East Lothian,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,40,6.9,Males,580
+East Lothian,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,44,7.3,Females,606
+East Renfrewshire,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,28,5.9,Males,478
+East Renfrewshire,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,46,8.9,Females,516
+East Renfrewshire,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,19,3.7,Females,516
+East Renfrewshire,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,33,6.9,Males,478
+East Renfrewshire,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,70,13.6,Females,516
+East Renfrewshire,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,65,13.6,Males,478
+East Renfrewshire,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,42,8.1,Females,516
+East Renfrewshire,2021,C61,Malignant neoplasm of prostate,Prostate cancer,20,4.2,Males,478
+East Renfrewshire,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,30,6.3,Males,478
+East Renfrewshire,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,22,4.3,Females,516
+Falkirk,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,40,4.2,Males,959
+Falkirk,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,60,6.2,Females,961
+Falkirk,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,42,4.4,Females,961
+Falkirk,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,68,7.1,Males,959
+Falkirk,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,137,14.3,Females,961
+Falkirk,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,122,12.7,Males,959
+Falkirk,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,81,8.4,Females,961
+Falkirk,2021,C18-C21,"Malignant neoplasm of colon, sigmoid, rectum and anus",Colorectal cancer,35,3.6,Males,959
+Falkirk,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,64,6.7,Males,959
+Falkirk,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,65,6.8,Females,961
+Fife,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,120,5.3,Males,2283
+Fife,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,175,7.6,Females,2292
+Fife,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,94,4.1,Males,2283
+Fife,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,92,4,Females,2292
+Fife,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,167,7.3,Males,2283
+Fife,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,327,14.3,Females,2292
+Fife,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,322,14.1,Males,2283
+Fife,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,192,8.4,Females,2292
+Fife,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,154,6.7,Males,2283
+Fife,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,160,7,Females,2292
+Glasgow City,2021,X40-X49,Accidental poisoning,Accidental poisoning,206,6,Males,3436
+Glasgow City,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,193,5.6,Females,3470
+Glasgow City,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,156,4.5,Males,3436
+Glasgow City,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,208,6,Females,3470
+Glasgow City,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,160,4.7,Males,3436
+Glasgow City,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,372,10.7,Females,3470
+Glasgow City,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,445,13,Males,3436
+Glasgow City,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,278,8,Females,3470
+Glasgow City,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,257,7.5,Males,3436
+Glasgow City,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,263,7.6,Females,3470
+Highland,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,83,5.7,Males,1469
+Highland,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,114,8.4,Females,1362
+Highland,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,57,3.9,Males,1469
+Highland,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,57,4.2,Females,1362
+Highland,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,125,8.5,Males,1469
+Highland,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,194,14.2,Females,1362
+Highland,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,230,15.7,Males,1469
+Highland,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,130,9.5,Females,1362
+Highland,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,81,5.5,Males,1469
+Highland,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,75,5.5,Females,1362
+Inverclyde,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,29,5.8,Males,497
+Inverclyde,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,35,6.5,Females,536
+Inverclyde,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,27,5.4,Males,497
+Inverclyde,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,36,6.7,Females,536
+Inverclyde,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,36,7.2,Males,497
+Inverclyde,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,96,17.9,Females,536
+Inverclyde,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,68,13.7,Males,497
+Inverclyde,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,38,7.1,Females,536
+Inverclyde,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,25,5,Males,497
+Inverclyde,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,33,6.2,Females,536
+Midlothian,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,28,5.7,Females,493
+Midlothian,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,24,4.9,Males,493
+Midlothian,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,28,5.7,Females,493
+Midlothian,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,21,4.3,Males,493
+Midlothian,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,58,11.8,Females,493
+Midlothian,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,59,12,Males,493
+Midlothian,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,47,9.5,Females,493
+Midlothian,2021,C18-C21,"Malignant neoplasm of colon, sigmoid, rectum and anus",Colorectal cancer,22,4.5,Males,493
+Midlothian,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,41,8.3,Males,493
+Midlothian,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,29,5.9,Females,493
+Moray,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,42,6.8,Males,614
+Moray,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,47,8.4,Females,557
+Moray,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,38,6.2,Males,614
+Moray,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,65,11.7,Females,557
+Moray,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,74,12.1,Males,614
+Moray,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,53,9.5,Females,557
+Moray,2021,C50,Malignant neoplasm of breast,Breast cancer,25,4.5,Females,557
+Moray,2021,C18-C21,"Malignant neoplasm of colon, sigmoid, rectum and anus",Colorectal cancer,26,4.2,Males,614
+Moray,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,40,6.5,Males,614
+Moray,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,33,5.9,Females,557
+Na h-Eileanan Siar,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,14,7,Males,200
+Na h-Eileanan Siar,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,16,8.3,Females,193
+Na h-Eileanan Siar,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,14,7,Males,200
+Na h-Eileanan Siar,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,21,10.9,Females,193
+Na h-Eileanan Siar,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,25,12.5,Males,200
+Na h-Eileanan Siar,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,22,11.4,Females,193
+Na h-Eileanan Siar,2021,C61,Malignant neoplasm of prostate,Prostate cancer,11,5.5,Males,200
+Na h-Eileanan Siar,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,10,5,Males,200
+Na h-Eileanan Siar,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,13,6.7,Females,193
+Na h-Eileanan Siar,2021,R00-R99,"Symptoms, signs and ill-defined conditions","Symptoms, signs and ill-defined conditions",10,5.2,Females,193
+North Ayrshire,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,46,4.8,Males,965
+North Ayrshire,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,80,7.8,Females,1025
+North Ayrshire,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,46,4.8,Males,965
+North Ayrshire,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,64,6.2,Females,1025
+North Ayrshire,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,89,8.7,Females,1025
+North Ayrshire,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,136,14.1,Males,965
+North Ayrshire,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,98,9.6,Females,1025
+North Ayrshire,2021,C61,Malignant neoplasm of prostate,Prostate cancer,38,3.9,Males,965
+North Ayrshire,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,56,5.8,Males,965
+North Ayrshire,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,71,6.9,Females,1025
+North Lanarkshire,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,104,5,Males,2085
+North Lanarkshire,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,113,5.4,Females,2105
+North Lanarkshire,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,91,4.4,Males,2085
+North Lanarkshire,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,109,5.2,Females,2105
+North Lanarkshire,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,112,5.4,Males,2085
+North Lanarkshire,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,253,12,Females,2105
+North Lanarkshire,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,283,13.6,Males,2085
+North Lanarkshire,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,173,8.2,Females,2105
+North Lanarkshire,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,114,5.5,Males,2085
+North Lanarkshire,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,143,6.8,Females,2105
+Orkney Islands,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,11,8.3,Males,133
+Orkney Islands,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,11,9.1,Females,121
+Orkney Islands,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,6,4.5,Males,133
+Orkney Islands,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,33,27.3,Females,121
+Orkney Islands,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,17,12.8,Males,133
+Orkney Islands,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,9,7.4,Females,121
+Orkney Islands,2021,C50,Malignant neoplasm of breast,Breast cancer,5,4.1,Females,121
+Orkney Islands,2021,C61,Malignant neoplasm of prostate,Prostate cancer,9,6.8,Males,133
+Orkney Islands,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,5,4.1,Females,121
+Orkney Islands,2021,I34-I38,Nonrheumatic valve disorders and endocarditis,Nonrheumatic valve disorders and endocarditis,5,3.8,Males,133
+Perth and Kinross,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,54,6,Males,904
+Perth and Kinross,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,76,8.3,Females,917
+Perth and Kinross,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,34,3.7,Females,917
+Perth and Kinross,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,70,7.7,Males,904
+Perth and Kinross,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,102,11.1,Females,917
+Perth and Kinross,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,130,14.4,Males,904
+Perth and Kinross,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,88,9.6,Females,917
+Perth and Kinross,2021,C61,Malignant neoplasm of prostate,Prostate cancer,37,4.1,Males,904
+Perth and Kinross,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,40,4.4,Males,904
+Perth and Kinross,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,47,5.1,Females,917
+Renfrewshire,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,62,5.6,Males,1104
+Renfrewshire,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,84,7.4,Females,1128
+Renfrewshire,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,51,4.6,Males,1104
+Renfrewshire,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,54,4.8,Females,1128
+Renfrewshire,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,75,6.8,Males,1104
+Renfrewshire,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,140,12.4,Females,1128
+Renfrewshire,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,150,13.6,Males,1104
+Renfrewshire,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,77,6.8,Females,1128
+Renfrewshire,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,53,4.8,Males,1104
+Renfrewshire,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,68,6,Females,1128
+Scottish Borders,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,36,5,Males,715
+Scottish Borders,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,55,7.5,Females,733
+Scottish Borders,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,31,4.2,Females,733
+Scottish Borders,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,42,5.9,Males,715
+Scottish Borders,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,64,8.7,Females,733
+Scottish Borders,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,114,15.9,Males,715
+Scottish Borders,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,69,9.4,Females,733
+Scottish Borders,2021,C61,Malignant neoplasm of prostate,Prostate cancer,38,5.3,Males,715
+Scottish Borders,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,35,4.9,Males,715
+Scottish Borders,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,46,6.3,Females,733
+Shetland Islands,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,18,12.2,Males,148
+Shetland Islands,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,17,15.6,Females,109
+Shetland Islands,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,15,10.1,Males,148
+Shetland Islands,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,12,11,Females,109
+Shetland Islands,2021,C50,Malignant neoplasm of breast,Breast cancer,5,4.6,Females,109
+Shetland Islands,2021,C18-C21,"Malignant neoplasm of colon, sigmoid, rectum and anus",Colorectal cancer,8,5.4,Males,148
+Shetland Islands,2021,C18-C21,"Malignant neoplasm of colon, sigmoid, rectum and anus",Colorectal cancer,5,4.6,Females,109
+Shetland Islands,2021,C61,Malignant neoplasm of prostate,Prostate cancer,9,6.1,Males,148
+Shetland Islands,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,12,8.1,Males,148
+Shetland Islands,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,4,3.7,Females,109
+South Ayrshire,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,49,6,Males,815
+South Ayrshire,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,67,8.1,Females,829
+South Ayrshire,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,39,4.7,Females,829
+South Ayrshire,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,49,6,Males,815
+South Ayrshire,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,107,12.9,Females,829
+South Ayrshire,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,139,17.1,Males,815
+South Ayrshire,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,68,8.2,Females,829
+South Ayrshire,2021,C61,Malignant neoplasm of prostate,Prostate cancer,31,3.8,Males,815
+South Ayrshire,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,49,6,Males,815
+South Ayrshire,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,47,5.7,Females,829
+South Lanarkshire,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,107,5.5,Males,1950
+South Lanarkshire,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,132,6.6,Females,1992
+South Lanarkshire,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,76,3.9,Males,1950
+South Lanarkshire,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,99,5,Females,1992
+South Lanarkshire,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,106,5.4,Males,1950
+South Lanarkshire,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,261,13.1,Females,1992
+South Lanarkshire,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,256,13.1,Males,1950
+South Lanarkshire,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,144,7.2,Females,1992
+South Lanarkshire,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,119,6.1,Males,1950
+South Lanarkshire,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,118,5.9,Females,1992
+Stirling,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,23,4.3,Males,529
+Stirling,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,30,5.9,Females,507
+Stirling,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,27,5.3,Females,507
+Stirling,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,37,7,Males,529
+Stirling,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,79,15.6,Females,507
+Stirling,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,78,14.7,Males,529
+Stirling,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,40,7.9,Females,507
+Stirling,2021,C18-C21,"Malignant neoplasm of colon, sigmoid, rectum and anus",Colorectal cancer,25,4.7,Males,529
+Stirling,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,35,6.6,Males,529
+Stirling,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,23,4.5,Females,507
+West Dunbartonshire,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,25,4.1,Males,608
+West Dunbartonshire,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,40,6.3,Females,630
+West Dunbartonshire,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,29,4.8,Males,608
+West Dunbartonshire,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,33,5.2,Females,630
+West Dunbartonshire,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,23,3.8,Males,608
+West Dunbartonshire,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,72,11.4,Females,630
+West Dunbartonshire,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,90,14.8,Males,608
+West Dunbartonshire,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,57,9,Females,630
+West Dunbartonshire,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,42,6.9,Males,608
+West Dunbartonshire,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,43,6.8,Females,630
+West Lothian,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,46,4.9,Males,942
+West Lothian,2021,I60-I69,Cerebrovascular disease,Cerebrovascular disease,40,4.6,Females,865
+West Lothian,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,40,4.2,Males,942
+West Lothian,2021,J40-J47,Chronic lower respiratory diseases,Chronic lower respiratory diseases,55,6.4,Females,865
+West Lothian,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,53,5.6,Males,942
+West Lothian,2021,"F01, F03, G30",Dementia and Alzheimer's Disease,Dementia and Alzheimer's,93,10.8,Females,865
+West Lothian,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,137,14.5,Males,942
+West Lothian,2021,I20-I25,Ischaemic heart diseases,Ischaemic heart diseases,92,10.6,Females,865
+West Lothian,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,55,5.8,Males,942
+West Lothian,2021,C33-C34,"Malignant neoplasm of trachea, bronchus and lung",Lung cancer,49,5.7,Females,865
