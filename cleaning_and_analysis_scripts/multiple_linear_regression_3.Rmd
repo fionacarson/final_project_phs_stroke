@@ -1,0 +1,674 @@
+---
+title: "Multiple Linear Regression 3"
+output:
+  html_document:
+    toc: yes
+    toc_float: true
+    toc_depth: '2'
+    highlight: tango
+    df_print: paged
+---
+
+Two models will be built on discharge and death data with health board and easr values. 
+
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+library(GGally)
+library(ggfortify)
+library(modelr)
+library(relaimpo)
+library(glmulti)
+library(ggpubr)
+library(broom)
+library(plotly)
+```
+
+
+```{r}
+activity_hb <- read_csv(here("clean_data/activity_hb.csv")) 
+mortality_hb <- read_csv(here("clean_data/mortality_hb.csv")) 
+```
+
+
+## Manual Model Building - Discharge
+
+```{r}
+activity_hb_for_fitting_easr <- activity_hb %>% 
+  mutate(start_fin_year = as.numeric(str_extract(financial_year, "^[0-9]{4}")), 
+         .after = financial_year) %>% 
+  select(-financial_year, -hbr, -crude_rate, -number_of_discharges) %>% 
+  # Remove all rows which are combinations of other rows
+  filter(hbr_name != "Scotland",
+         admission_type != "All",
+         !age %in% c("All", "under 75"),
+         sex != "All",
+         diagnosis != "Cerebrovascular Disease") 
+```
+
+
+```{r, message = FALSE}
+ggpairs(activity_hb_for_fitting_easr, progress = FALSE)
+```
+
+### Model 1 - diagnosis
+
+Diagnosis looks like it has a strong effect so add this first. We already know that logging helps so do that. 
+
+```{r}
+model_dis_1 <- lm(log(1 + easr) ~ diagnosis, 
+                      data = activity_hb_for_fitting_easr)
+
+autoplot(model_dis_1)
+
+summary(model_dis_1)
+```
+
+Poor R2 but this is just first predictor.
+
+Now add residuals 
+
+
+```{r}
+activity_hb_remaining_resid <- activity_hb_for_fitting_easr %>% 
+  add_residuals(model_dis_1) %>% 
+  select(-easr, -diagnosis)
+
+
+ggpairs(activity_hb_remaining_resid, progress = FALSE)
+```
+
+Age looks next best - lets add it. 
+
+
+
+```{r}
+model_dis_2 <- lm(log(1 + easr) ~ diagnosis + age, 
+                      data = activity_hb_for_fitting_easr)
+
+autoplot(model_dis_2)
+
+summary(model_dis_2)
+```
+
+
+Plots aren't great but not so bad as previous models. Not a great spread above and below the line int he first graph. 
+
+R2 up to 0.31.
+
+```{r}
+activity_hb_remaining_resid <- activity_hb_for_fitting_easr %>% 
+  add_residuals(model_dis_2) %>% 
+  select(-easr, -diagnosis, -age)
+
+
+ggpairs(activity_hb_remaining_resid, progress = FALSE)
+```
+
+Admission type next and then health board - we know both those have an effect but lets check anova. 
+
+
+```{r}
+model_dis_3 <- lm(log(1 + easr) ~ diagnosis + age + admission_type, 
+                      data = activity_hb_for_fitting_easr)
+
+model_dis_4 <- lm(log(1 + easr) ~ diagnosis + age + admission_type + hbr_name, 
+                      data = activity_hb_for_fitting_easr)
+
+autoplot(model_dis_3)
+autoplot(model_dis_4)
+
+summary(model_dis_4)
+```
+
+```{r}
+anova(model_dis_3, model_dis_4)
+```
+
+Looks like adding admission and health board are signficant. 
+
+We only have sex and year left. 
+
+```{r}
+model_dis_5 <- lm(log(1 + easr) ~ diagnosis + age + admission_type + hbr_name
+                  + sex, 
+                      data = activity_hb_for_fitting_easr)
+
+anova(model_dis_4, model_dis_5)
+
+summary(model_dis_5)
+
+```
+
+Adding sex is significant - lets see what year does!
+
+```{r}
+model_dis_6 <- lm(log(1 + easr) ~ diagnosis + age + admission_type + hbr_name
+                  + sex + start_fin_year, 
+                      data = activity_hb_for_fitting_easr)
+
+anova(model_dis_5, model_dis_6)
+
+summary(model_dis_6)
+
+activity_hb_remaining_resid <- activity_hb_for_fitting_easr %>% 
+  add_residuals(model_dis_6) 
+
+
+```
+
+The significance is low for year. 
+
+```{r}
+calc.relimp(model_dis_6, type = "lmg", rela = TRUE)
+```
+lm.beta offers another way to check relative importance but its not as good as relaimpo. 
+The values in the standardised column provide a rough measure of predictor importance. 
+
+```{r}
+library(lm.beta)
+
+model_dis_6_betas <- lm.beta(model_dis_6)
+
+summary(model_dis_6_betas)
+```
+
+
+
+did a quick check to see how numbr of discharges data would look with this model and sex and year become insignificant. 
+
+```{r}
+model_dis_7 <- lm(log(1 + number_of_discharges) ~ diagnosis + age + admission_type + hbr_name
+                  + sex + start_fin_year, 
+                      data = activity_hb_for_fitting)
+
+summary(model_dis_7)
+```
+
+## Interactions
+
+age and sex
+age and admission type
+age and diagnosis
+diagnosis and admission type
+
+
+```{r}
+coplot(resid ~ age | sex, data = activity_hb_remaining_resid)
+```
+
+Not sure why this and calc.relimp isn't working - no NAs in either dataset. Something to do with log maybe?
+
+
+```{r}
+activity_hb_remaining_resid %>% 
+  ggplot(aes(x = age, y = resid, colour = diagnosis)) +
+  geom_jitter() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+Its hard to get a visual handle on these interaction but it might be that there are triple interactions.
+
+
+```{r}
+model_dis_6a <- lm(log(1 + easr) ~ diagnosis + age + admission_type + hbr_name
+                  + sex + start_fin_year + age:sex, 
+                      data = activity_hb_for_fitting_easr)
+
+model_dis_6b <- lm(log(1 + easr) ~ diagnosis + age + admission_type + hbr_name
+                  + sex + start_fin_year + age:admission_type, 
+                      data = activity_hb_for_fitting_easr)
+
+model_dis_6c <- lm(log(1 + easr) ~ diagnosis + age + admission_type + hbr_name
+                  + sex + start_fin_year + age:diagnosis, 
+                      data = activity_hb_for_fitting_easr)
+
+model_dis_6d <- lm(log(1 + easr) ~ diagnosis + age + admission_type + hbr_name
+                  + sex + start_fin_year + admission_type:diagnosis, 
+                      data = activity_hb_for_fitting_easr)
+
+anova(model_dis_6, model_dis_6d)
+
+summary(model_dis_6d)
+
+activity_hb_remaining_resid <- activity_hb_for_fitting_easr %>% 
+  add_residuals(model_dis_6)
+
+
+```
+Calculations from anova
+age:sex                       p-value = 0.1786
+age:admission_type            p-value = <2.2e-16
+age:diagnosis                 p-value = <2.2e-16
+admission_type:diagnosis      p-value = <2.2e-16
+
+
+R2
+model 6                       R2 = 0.6285
+age:sex                       R2 = 0.6286
+age:admission_type            R2 = 0.6716
+age:diagnosis                 R2 = 0.6664
+admission_type:diagnosis      R2 = 0.6978
+
+Looks like admission_type:diagnosis is the next best term to add to model!
+
+```{r}
+model_dis_7 <- lm(log(1 + easr) ~ diagnosis + age + admission_type + hbr_name
+                  + sex + start_fin_year + admission_type:diagnosis, 
+                      data = activity_hb_for_fitting_easr)
+
+autoplot(model_dis_7)
+
+model_dis_7a <- lm(log(1 + easr) ~ diagnosis + age + admission_type + hbr_name
+                  + sex + start_fin_year + admission_type:diagnosis +
+                    age:admission_type, 
+                      data = activity_hb_for_fitting_easr)
+
+
+model_dis_7b <- lm(log(1 + easr) ~ diagnosis + age + admission_type + hbr_name
+                  + sex + start_fin_year + admission_type:diagnosis +
+                    age:diagnosis, 
+                      data = activity_hb_for_fitting_easr)
+
+anova(model_dis_7, model_dis_7b)
+
+summary(model_dis_7b)
+
+```
+
+Lets go through the process again. 
+
+
+Calculations from anova
+age:admission_type            p-value = <2.2e-16
+age:diagnosis                 p-value = <2.2e-16
+
+
+R2
+model 7                       R2 = 0.6978
+age:admission_type            R2 = 0.7408
+age:diagnosis                 R2 = 0.7356
+
+age:admission_type has the slightly higher R2 so lets add it next. 
+
+
+```{r}
+model_dis_8 <- lm(log(1 + easr) ~ diagnosis + age + admission_type + hbr_name
+                  + sex + start_fin_year + admission_type:diagnosis +
+                    age:admission_type, 
+                      data = activity_hb_for_fitting_easr)
+
+
+model_dis_8a <- lm(log(1 + easr) ~ diagnosis + age + admission_type + hbr_name
+                  + sex + start_fin_year + admission_type:diagnosis +
+                    age:admission_type + age:diagnosis, 
+                      data = activity_hb_for_fitting_easr)
+
+anova(model_dis_8, model_dis_8a)
+
+summary(model_dis_8a)
+```
+
+
+Calculations from anova
+age:diagnosis                 p-value = <2.2e-16
+
+
+R2
+model 8                       R2 = 0.7408
+age:diagnosis                 R2 = 0.7786
+
+
+Seems valid to add age:diagnosis so lets make that model 9.
+
+
+```{r}
+model_dis_9 <- lm(log(1 + easr) ~ diagnosis + age + admission_type + hbr_name
+                  + sex + start_fin_year + admission_type:diagnosis +
+                    age:admission_type + age:diagnosis, 
+                      data = activity_hb_for_fitting_easr)
+
+```
+
+## Model 10
+
+Lets try a 3 way interaction between age, diagnosis and admission type
+
+```{r}
+model_dis_10 <- lm(log(1 + easr) ~ diagnosis + age + admission_type + hbr_name
+                  + sex + start_fin_year + admission_type:diagnosis +
+                    age:admission_type + age:diagnosis + age:diagnosis:admission_type, 
+                      data = activity_hb_for_fitting_easr)
+
+anova(model_dis_9, model_dis_10)
+
+summary(model_dis_10)
+```
+
+Adding the 3-way interaction is significant and improves the R2 slightly (adjusted R2 is fine too)
+
+How do we compare AIC and BIC for these models?
+
+```{r}
+mod6_stats <- glance(model_dis_6) %>% 
+  mutate(model_name = "model_dis_6", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod7_stats <- glance(model_dis_7) %>% 
+  mutate(model_name = "model_dis_7", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod8_stats <- glance(model_dis_8) %>% 
+  mutate(model_name = "model_dis_8", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod9_stats <- glance(model_dis_9) %>% 
+  mutate(model_name = "model_dis_9", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod10_stats <- glance(model_dis_10) %>% 
+  mutate(model_name = "model_dis_10", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+
+model_stat_comparison <- bind_rows(mod6_stats, mod7_stats, mod8_stats, mod9_stats, mod10_stats)
+
+```
+
+AIC and BIC going down and r2 and adjusted r2 going up!
+
+```{r}
+model_stat_comparison %>% 
+  mutate(model_name = fct_relevel(model_name, c("model_dis_6", "model_dis_7", "model_dis_8",
+                                    "model_dis_9", "model_dis_10"))) %>% 
+  ggplot(aes(model_name, AIC)) +
+  geom_point()
+```
+
+```{r}
+model_stat_comparison %>% 
+  mutate(model_name = fct_relevel(model_name, c("model_dis_6", "model_dis_7", "model_dis_8",
+                                    "model_dis_9", "model_dis_10"))) %>% 
+  ggplot(aes(model_name, adj.r.squared)) +
+  geom_point()
+```
+
+## Prediction
+
+How do we predict - create a new dataset for next 13 years? Add 13 to year columns?
+
+```{r}
+# Create a new future dataset for 2022 to 2034
+
+activity_2022_2034 <- activity_hb_for_fitting_easr %>% 
+  mutate(start_fin_year = start_fin_year + 13) %>% 
+  select(-easr)
+```
+
+```{r}
+mod_10_predictions <- activity_hb_for_fitting_easr %>% 
+  add_predictions(model_dis_10) 
+
+pred_plot <- mod_10_predictions %>% 
+ggplot(aes(easr, exp(pred))) +
+  geom_point() +
+  geom_abline(colour = "red")
+
+#thought this might help identify which points are the high ones e.g. female, stroke, glasgow??
+ggplotly(pred_plot)
+```
+
+Not the worse predictions ever. 
+Does look like there are 3 distinct groups here. What data is in that really high group. Can we remove it from the model?
+
+
+What about predicting the future?
+
+```{r}
+mod_10_future_predictions <- activity_2022_2034 %>% 
+  add_predictions(model_dis_10) %>% 
+  mutate(pred = exp(pred)) %>% 
+  rename("easr" = "pred") %>% 
+  mutate(real_or_pred = "pred")
+
+activity_for_joining <- activity_hb_for_fitting_easr %>% 
+  mutate(real_or_pred = "real")
+
+future_predictions <- bind_rows(activity_for_joining, mod_10_future_predictions)
+
+```
+
+right now how do we display the data. Lets try the whole of scotland. 
+
+```{r}
+future_predictions %>% 
+ # filter(hbr_name == "Lothian") %>% 
+#  filter(diagnosis == "Stroke") %>% 
+#  filter(age == "over 75") %>% 
+  group_by(start_fin_year, hbr_name) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(start_fin_year, mean_easr)) +
+  geom_point() +
+  facet_wrap(~hbr_name)
+```
+
+```{r}
+future_predictions %>% 
+ # filter(hbr_name == "Lothian") %>% 
+# filter(diagnosis == "Stroke") %>% 
+ # filter(age == "over 75") %>% 
+  group_by(start_fin_year, age) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(start_fin_year, mean_easr, colour = age)) +
+  geom_point() 
+```
+
+
+
+The problem we are seeing is that the model is predicting a decrease in easr for all areas. So predictions look good for 
+
+What can we do - remove health boards from model?
+
+```{r}
+activity_hb_for_fitting_easr %>% 
+  group_by(start_fin_year) %>% 
+  summarise(total_easr = mean(easr)) %>% 
+  ggplot(aes(start_fin_year, total_easr)) +
+  geom_point() +
+  geom_smooth(method = lm) +
+  stat_regline_equation(aes(label = ..rr.label..))
+```
+
+
+
+### Removing health boards
+
+```{r}
+model_dis_11 <- lm(log(1 + easr) ~ diagnosis + age + admission_type
+                  + sex + start_fin_year + admission_type:diagnosis +
+                    age:admission_type + age:diagnosis + age:diagnosis:admission_type, 
+                      data = activity_hb_for_fitting_easr)
+
+anova(model_dis_10, model_dis_11)
+
+summary(model_dis_11)
+```
+
+Our r squared as dropped to 0.72 adn AIC and BIC aren't as good. 
+
+```{r}
+mod11_stats <- glance(model_dis_11) %>% 
+  mutate(model_name = "model_dis_11", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+```
+
+But removing health board makes no sense as numbers are still going to go down with increasing year as that is what the slope is doing. 
+Are the numbers being affected by the big health boards - is this where we categorise health boards?
+
+### Removing Glasgow
+
+Ok this is getting a bit crazy now but what if we remove glasgow and see what happens
+
+
+```{r}
+
+activity_hb_for_fitting_easr_no_glasgow <- activity_hb_for_fitting_easr %>% 
+  filter(hbr_name != "Greater Glasgow & Clyde")
+
+
+
+model_dis_12 <- lm(log(1 + easr) ~ diagnosis + age + admission_type + hbr_name
+                  + sex + start_fin_year + admission_type:diagnosis +
+                    age:admission_type + age:diagnosis + age:diagnosis:admission_type, 
+                      data = activity_hb_for_fitting_easr_no_glasgow)
+
+anova(model_dis_10, model_dis_12)
+
+summary(model_dis_12)
+```
+
+R2 is still pretty high. 
+
+But overall the predictions might fit better as we won't see that big increase caused by Glasgow. 
+
+How are predictions on real data?
+
+```{r}
+mod_12_predictions <- activity_hb_for_fitting_easr_no_glasgow %>% 
+  add_predictions(model_dis_12) 
+
+mod_12_predictions %>% 
+ggplot(aes(easr, exp(pred))) +
+  geom_point() +
+  geom_abline(colour = "red") +
+  facet_wrap(~hbr_name)
+```
+
+So Glasgow isn't to blame for those high values. They are all stroke and over 75 but the clusters are weird. I'm sure this means something but not sure what at the moment, ah ok its the pred values that are changing I guess the model is applying a blanket value so for the same easr the different health boards are getting different predicted values which is causing the clusters. 
+
+
+
+```{r}
+activity_2022_2034_no_glasgow <- activity_2022_2034 %>% 
+  filter(hbr_name != "Greater Glasgow & Clyde")
+
+mod_12_future_predictions <- activity_2022_2034_no_glasgow %>% 
+  add_predictions(model_dis_12)
+
+mod_12_future_predictions <- activity_2022_2034_no_glasgow %>% 
+  add_predictions(model_dis_12) %>% 
+  mutate(pred = exp(pred)) %>% 
+  rename("easr" = "pred") %>% 
+  mutate(real_or_pred = "pred")
+
+activity_for_joining_no_glasgow <- activity_for_joining %>% 
+    filter(hbr_name != "Greater Glasgow & Clyde")
+
+
+future_predictions_no_glasgow <- bind_rows(activity_for_joining_no_glasgow, 
+                                           mod_12_future_predictions)
+
+future_predictions_no_glasgow %>% 
+ # filter(hbr_name == "Lothian") %>% 
+#  filter(diagnosis == "Stroke") %>% 
+#  filter(age == "over 75") %>% 
+  group_by(start_fin_year, hbr_name) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(start_fin_year, mean_easr)) +
+  geom_point() +
+  facet_wrap(~hbr_name)
+
+```
+
+This is no better without glasgow - lets leave it in. 
+
+### Model 13 - one last thought - what about interaction between sex and diagnosis
+
+```{r}
+model_dis_13 <- lm(log(1 + easr) ~ diagnosis + age + admission_type + hbr_name
+                  + sex + start_fin_year + admission_type:diagnosis +
+                    age:admission_type + age:diagnosis + age:diagnosis:admission_type +
+                    sex:diagnosis, 
+                      data = activity_hb_for_fitting_easr)
+
+anova(model_dis_10, model_dis_13)
+
+summary(model_dis_13)
+```
+
+anova says it is significant to add it but not really increasing r2 much. 
+
+```{r}
+mod13_stats <- glance(model_dis_13) %>% 
+  mutate(model_name = "model_dis_13", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+
+model_stat_comparison <- bind_rows(mod6_stats, mod7_stats, mod8_stats, 
+                                   mod9_states, mod10_states, mod13_stats)
+
+```
+
+AIC and BIC are decreasing though lets keep it in
+
+## Model 14 adn 15
+
+lets look at interactions with year age and year and health board and year
+
+```{r}
+model_dis_14 <- lm(log(1 + easr) ~ diagnosis + age + admission_type + hbr_name
+                  + sex + start_fin_year + admission_type:diagnosis +
+                    age:admission_type + age:diagnosis + age:diagnosis:admission_type +
+                    sex:diagnosis + start_fin_year:age, 
+                      data = activity_hb_for_fitting_easr)
+
+model_dis_15 <- lm(log(1 + easr) ~ diagnosis + age + admission_type + hbr_name
+                  + sex + start_fin_year + admission_type:diagnosis +
+                    age:admission_type + age:diagnosis + age:diagnosis:admission_type +
+                    sex:diagnosis + start_fin_year:hbr_name, 
+                      data = activity_hb_for_fitting_easr)
+
+
+anova(model_dis_13, model_dis_15)
+
+summary(model_dis_15)
+```
+
+start_fin_year:age    p-value = 0.02    1 star
+start_fin_year:hbr_name   p-value = 2.124e-6.  3 star!
+
+R square improving a tiny bit for model 15 with year and health board. Lets check AIC and BIC
+
+```{r}
+mod15_stats <- glance(model_dis_15) %>% 
+  mutate(model_name = "model_dis_15", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+
+model_stat_comparison <- bind_rows(mod6_stats, mod7_stats, mod8_stats, 
+                                   mod9_stats, mod10_stats, mod13_stats,
+                                   mod15_stats)
+```
+
+Tiny improvements in r2 and AIC but BIC has increased - so don't add this interaction and stick with model 13. 
+
+
+# MODEL 13 IS FINAL MODEL!!
+
+model_dis_13 <- lm(log(1 + easr) ~ diagnosis + age + admission_type + hbr_name
+                  + sex + start_fin_year + admission_type:diagnosis +
+                    age:admission_type + age:diagnosis + 
+                    age:diagnosis:admission_type + sex:diagnosis, 
+                      data = activity_hb_for_fitting_easr)
+                      
+R2 and adjusted R2 are 0.79
+
+The final dataset containing all the predictions is: `future_predictions`
+
+
+
+
+
+
+

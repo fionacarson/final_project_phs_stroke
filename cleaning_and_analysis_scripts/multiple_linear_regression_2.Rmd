@@ -13,7 +13,6 @@ output:
 library(tidyverse)
 library(here)
 library(janitor)
-library(fastDummies)
 library(GGally)
 library(ggfortify)
 library(modelr)
@@ -32,7 +31,7 @@ mortality_ca <- read_csv(here("clean_data/mortality_ca.csv"))
 
 
 
-Lets try and build 8 models for mortality, activity vs health board and council. Do all these by raw data and easr. 
+Lets try and build models for mortality, activity vs health board and council. Do all these by raw data and easr. 
 
 Need to have year in there as we want to predict on year. 
 
@@ -278,6 +277,15 @@ mortality_hb_for_fitting_easr %>%
          sex != "All",
          diagnosis != "Cerebrovascular Disease") %>% 
   ggplot(aes(year, easr)) +
+  geom_jitter()
+
+
+mortality_hb_for_fitting_easr %>% 
+    filter(hbr_name != "Scotland",
+         !age %in% c("All", "under 75"),
+         sex != "All",
+         diagnosis != "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, easr)) +
   geom_jitter() +
   scale_y_continuous(limits = c(0, 20))
 
@@ -288,7 +296,7 @@ mortality_hb_for_fitting_easr %>%
          diagnosis != "Cerebrovascular Disease") %>% 
   ggplot(aes(year, easr)) +
   geom_jitter() +
-  scale_y_continuous(limits = c(20, 150))
+  scale_y_continuous(limits = c(0, 100))
 
 mortality_hb_for_fitting_easr %>% 
     filter(hbr_name != "Scotland",
@@ -334,4 +342,19 @@ mortality_hb_for_fitting_easr %>%
   geom_jitter() +
   scale_y_continuous(limits = c(150, 2000))
 ```
+
+
+
+```{r}
+mortality_hb_for_fitting_easr %>% 
+    filter(hbr_name != "Scotland",
+         !age %in% c("All", "under 75"),
+         sex != "All",
+         diagnosis != "Cerebrovascular Disease",
+         easr >= 150) %>% 
+  select(where(is.character)) %>% 
+  map(unique)
+
+```
+
 
