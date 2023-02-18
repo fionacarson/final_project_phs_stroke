@@ -1,0 +1,221 @@
+---
+title: "Multiple Linear Regression - Mortality"
+output:
+  html_document:
+    toc: yes
+    toc_float: true
+    toc_depth: '2'
+    highlight: tango
+    df_print: paged
+---
+
+
+```{r}
+library(tidyverse)
+library(here)
+library(GGally) # ggpairs
+library(modelr) # add_residuals and add_predictions
+library(ggfortify) # autoplot
+library(broom) # glance - for checking AIC, BIC of models
+```
+
+
+```{r}
+activity_hb <- read_csv(here("clean_data/activity_hb.csv")) 
+mortality_hb <- read_csv(here("clean_data/mortality_hb.csv")) 
+```
+
+
+```{r}
+mortality_hb_for_fitting_easr <- mortality_hb %>% 
+  select(-hbr, -crude_rate, -number_of_deaths) %>% 
+  # Remove all rows which are combinations of other rows
+  filter(hbr_name != "Scotland",
+         !age %in% c("All", "under 75"),
+         sex != "All",
+         diagnosis != "Cerebrovascular Disease") 
+```
+
+## Model 1 - Age
+
+```{r, message = FALSE}
+ggpairs(mortality_hb_for_fitting_easr, progress = FALSE)
+```
+
+
+```{r}
+model_mort_1 <- lm(log(1 + easr) ~ age, 
+                      data = mortality_hb_for_fitting_easr)
+
+autoplot(model_mort_1)
+
+summary(model_mort_1)
+```
+
+Wow we have an R2 of 0.5 already. 
+
+## Model 2 - diagnosis
+
+```{r}
+mortality_hb_remaining_resid <- mortality_hb_for_fitting_easr %>% 
+  add_residuals(model_mort_1) %>% 
+  select(-easr, -age)
+
+
+ggpairs(mortality_hb_remaining_resid, progress = FALSE)
+```
+
+
+
+```{r}
+model_mort_2 <- lm(log(1 + easr) ~ age + diagnosis, 
+                      data = mortality_hb_for_fitting_easr)
+
+autoplot(model_mort_2)
+
+summary(model_mort_2)
+```
+
+R2 upt o 0.64 now. 
+
+## Model 3 - health board
+
+```{r}
+mortality_hb_remaining_resid <- mortality_hb_for_fitting_easr %>% 
+  add_residuals(model_mort_2) %>% 
+  select(-easr, -age, -diagnosis)
+```
+
+
+```{r, message = FALSE}
+ggpairs(mortality_hb_remaining_resid, progress = FALSE)
+```
+
+```{r}
+model_mort_3 <- lm(log(1 + easr) ~ age + diagnosis + hbr_name, 
+                      data = mortality_hb_for_fitting_easr)
+
+autoplot(model_mort_3)
+
+summary(model_mort_3)
+```
+
+Not huge improvement in R2 up to 0.68 now. Lots of the health boareds are not significant. 
+Orkney, Shetland, WI and Borders are only ones with 3 stars. Dumfries has 2 and Glasgow has 1. 
+
+
+## Model 4 - year
+
+No point in adding residuals nad checking ggpairs as year and sex are only variables left. We need year so lets add it first. 
+
+```{r}
+model_mort_4 <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year, 
+                      data = mortality_hb_for_fitting_easr)
+
+autoplot(model_mort_4)
+
+summary(model_mort_4)
+```
+
+```{r}
+anova(model_mort_3, model_mort_4)
+```
+
+It is significant to add year. 
+
+## Model 5 - sex
+
+No point in adding residuals nad checking ggpairs as year and sex are only variables left. We need year so lets add it first. 
+
+```{r}
+model_mort_5 <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex, 
+                      data = mortality_hb_for_fitting_easr)
+
+autoplot(model_mort_5)
+
+summary(model_mort_5)
+
+anova(model_mort_4, model_mort_5)
+```
+
+Not significant to add sex (but might be if we look at interactions) so lets leave it in for now. 
+
+
+
+
+Lets try interactions, as I did for discharges. We added:
+admission_type:diagnosis
+age:admission_type
+age:diagnosis
+age:diagnosis:admission_type
+sex:diagnosis
+
+No admission type in this data so lets try:
+age:diagnosis
+sex:diagnosis
+hbr_name:age
+hbr_name:year
+
+
+## Model 6 - interactions
+
+```{r}
+model_mort_6a <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                    age:diagnosis, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_6b <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                    sex:diagnosis, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_6c <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                    hbr_name:age, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_6d <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                    hbr_name:year, 
+                      data = mortality_hb_for_fitting_easr)
+
+```
+
+```{r}
+mod5_stats <- glance(model_mort_5) %>% 
+  mutate(model_name = "model_mort_5", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod6a_stats <- glance(model_mort_6a) %>% 
+  mutate(model_name = "model_mort_6a", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod6b_stats <- glance(model_mort_6b) %>% 
+  mutate(model_name = "model_mort_6b", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod6c_stats <- glance(model_mort_6c) %>% 
+  mutate(model_name = "model_mort_6c", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod6d_stats <- glance(model_mort_6d) %>% 
+  mutate(model_name = "model_mort_6d", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+
+
+model_stat_comparison <- bind_rows(mod5_stats,mod6a_stats, mod6b_stats, mod6c_stats, mod6d_stats)
+```
+
+The age:diagnosis improves R2 a lot to 0.82 (and adjusted R2 is good). None of the other interactions make much differences. Lets stop here. 
+
+BIC goes up from 5 to 6b and 6c so lets not add them. 
+
+# MODEL 6A - FINAL MODEL
+
+model_mort_6a <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                    age:diagnosis, 
+                      data = mortality_hb_for_fitting_easr)
+                      
+R2 and adjusted R2 are 0.82
+
+
+
+

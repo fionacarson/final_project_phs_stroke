@@ -15,14 +15,15 @@ Two models will be built on discharge and death data with health board and easr 
 library(tidyverse)
 library(here)
 library(janitor)
-library(GGally)
+library(GGally) # ggpairs
 library(ggfortify)
-library(modelr)
+library(modelr) # add_residuals and add_predictions
 library(relaimpo)
 library(glmulti)
 library(ggpubr)
 library(broom)
 library(plotly)
+library(performance) # checks and compares quality of models
 ```
 
 
@@ -612,6 +613,7 @@ model_stat_comparison <- bind_rows(mod6_stats, mod7_stats, mod8_stats,
 
 AIC and BIC are decreasing though lets keep it in
 
+
 ## Model 14 adn 15
 
 lets look at interactions with year age and year and health board and year
@@ -667,7 +669,131 @@ R2 and adjusted R2 are 0.79
 The final dataset containing all the predictions is: `future_predictions`
 
 
+## glmulti
 
+```{r}
+activity_glmulti <- activity_hb_for_fitting_easr %>% 
+  mutate_if(is.character, as.factor)
+
+
+
+glmulti_mod_dis_13 <- glmulti_fit <- glmulti(
+  easr ~ ., 
+  data = activity_glmulti,
+  level = 2, # 2 = include pairwise interactions, 1 = main effects only (main effect = no pairwise interactions)
+  minsize = 0, # no min size of model
+  maxsize = -1, # -1 = no max size of model
+  marginality = TRUE, # marginality here means the same as 'strongly hierarchical' interactions, i.e. include pairwise interactions only if both predictors present in the model as main effects.
+  method = "h", # h is exhaustive, g is genetic, l is fast exhaustive (needs leaps), 
+  # d is simple summary of candidate set printed
+  crit = bic, # criteria for model selection is BIC value (lower is better)
+  plotty = FALSE, # don't plot models as function runs
+  report = TRUE, # do produce reports as function runs
+  confsetsize = 100, # return best 100 solutions
+  fitfunction = lm # fit using the `lm` function
+)
+```
+
+
+
+```{r}
+optimal_model <- glmulti_mod_dis_13@objects[[1]]
+
+summary(glmulti_mod_dis_13@objects[[1]])
+
+```
+
+```{r}
+glmulti_mod_dis_13@
+```
+
+The model got an R2 of 0.77 but look at all the terms its added!! Also I didn't log the easr - whoops. 
+
+```{r}
+glance(model_dis_13)
+
+glance(optimal_model)
+```
+
+
+```{r}
+write(glmulti_mod_dis_13, file = here("clean_data/glmulti_discharge"))
+```
+
+
+```{r}
+
+glmulti_fit_logged_genetic <- glmulti(
+  log(1 + easr) ~ ., 
+  data = activity_glmulti,
+  level = 2, # 2 = include pairwise interactions, 1 = main effects only (main effect = no pairwise interactions)
+  minsize = 0, # no min size of model
+  maxsize = -1, # -1 = no max size of model
+  marginality = TRUE, # marginality here means the same as 'strongly hierarchical' interactions, i.e. include pairwise interactions only if both predictors present in the model as main effects.
+  method = "g", # h is exhaustive, g is genetic, l is fast exhaustive (needs leaps), 
+  # d is simple summary of candidate set printed
+  crit = bic, # criteria for model selection is BIC value (lower is better)
+  plotty = FALSE, # don't plot models as function runs
+  report = TRUE, # do produce reports as function runs
+  confsetsize = 100, # return best 100 solutions
+  fitfunction = lm # fit using the `lm` function
+)
+```
+
+
+## All Scotland predictions
+
+```{r}
+mortality_hb_for_fitting_easr_scotland <- mortality_hb %>% 
+  select(-hbr, -crude_rate, -number_of_deaths) %>% 
+  # Remove all rows which are combinations of other rows
+  filter(hbr_name == "Scotland",
+         !age %in% c("All", "under 75"),
+         sex != "All",
+         diagnosis != "Cerebrovascular Disease") %>% 
+  select(-hbr_name)
+```
+
+```{r}
+model_mort_scot_1 <- lm(log(1 + easr) ~ diagnosis + age + sex, 
+                       data = mortality_hb_for_fitting_easr_scotland)
+
+model_mort_scot_2 <- lm(log(1 + easr) ~ diagnosis + age + sex + year, 
+                       data = mortality_hb_for_fitting_easr_scotland)
+
+anova(model_mort_scot_1, model_mort_scot_2)
+```
+
+Year haspoor significance. If its not doing anything then how can we predict on it. 
+Was even worse for acitivty easr data. 
+
+
+## All Scotland on number of deaths?
+
+```{r}
+mortality_hb_for_fitting_num_deaths_scotland <- mortality_hb %>% 
+  select(-hbr, -crude_rate, -easr) %>% 
+  # Remove all rows which are combinations of other rows
+  filter(hbr_name == "Scotland",
+         !age %in% c("All", "under 75"),
+         sex != "All",
+         diagnosis != "Cerebrovascular Disease") %>% 
+  select(-hbr_name)
+```
+
+
+```{r}
+model_mort_num_deaths_scot_1 <- lm(log(1 + number_of_deaths) ~ diagnosis + age  + sex, 
+                       data = mortality_hb_for_fitting_num_deaths_scotland)
+
+model_mort_num_deaths_scot_2 <- lm(log(1 + number_of_deaths) ~ diagnosis + age + + sex + 
+                         year, 
+                       data = mortality_hb_for_fitting_num_deaths_scotland)
+
+anova(model_mort_num_deaths_scot_1, model_mort_num_deaths_scot_2)
+```
+
+Again year is insignficant. 
 
 
 

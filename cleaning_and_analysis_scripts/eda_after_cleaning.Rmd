@@ -24,6 +24,12 @@ activity_ca <- read_csv(here("clean_data/activity_ca.csv"))
 ```
 
 ```{r}
+source(here("theme_palette_etc/plot_theme.R"))
+```
+
+
+
+```{r}
 activity_hb %>% 
   select(where(is.character)) %>% 
   map(unique)
@@ -619,7 +625,6 @@ Mortality is going down everywhere - not very interesting. What is happening at 
 
 
 
-
 ```{r}
 mortality_ca %>% 
   filter(ca_name != "Scotland",
@@ -640,6 +645,53 @@ mortality_ca %>%
         strip.text = element_text(size = 10, colour = "grey30"),
         axis.text.y = element_text(size = 8))
 ```
+
+Is mortality going down for all ages, diagnosis and admission types?
+
+```{r}
+islands_mortality <- mortality_hb %>% 
+  filter(hbr_name %in% c("Orkney", "Shetland", "Western Isles")) %>% 
+  group_by(year, age, sex, diagnosis) %>% 
+  summarise(number_of_deaths = sum(number_of_deaths),
+            crude_rate = mean(crude_rate),
+            easr = mean(easr)) %>% 
+  mutate(hbr_name = "Islands")
+
+mortality_hb_islands <- mortality_hb %>% 
+  filter(!hbr_name %in% c("Orkney", "Shetland", "Western Isles")) %>% 
+  bind_rows(islands_mortality)
+
+mortality_hb_islands %>% 
+  filter(hbr_name != "Scotland",
+         sex == "All",
+         age == "over 75", 
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, easr)) +
+  geom_point(aes(colour = age)) +
+  geom_smooth(method = lm, colour = "black", linewidth = 0.4, se = FALSE) +
+  facet_wrap(~hbr_name) +  
+#  stat_regline_equation(aes(label = paste(..eq.label.., ..rr.label.., 
+#                                        sep = "~~~~"))) +
+# plots were coloured according to whether they changed by over or under 100 over the 13 year period
+#      scale_colour_manual(values = c("#6d95bf", "grey30", "#f084b6", "grey30","#6d95bf", #"#f084b6", "#6d95bf", "grey30","grey30", "#6d95bf", "#f084b6", "grey30")) +
+#  theme_fc() +
+    theme(legend.position = "none",
+        # changes font size of faceted plot titles. 
+        strip.text = element_text(size = 10, colour = "grey30"),
+        axis.text.y = element_text(size = 8))
+```
+
+
+Didn't do a 100% exhaustive check but more most combinations of variables the mortality rate is going down. When the numbers are low sometimes the rates are going up. 
+
+```{r}
+mortality_hb_islands %>% 
+  select(where(is.character)) %>% 
+  map(unique)
+
+
+```
+
 
 
 # Sex differences by health board
