@@ -356,21 +356,44 @@ ggplot(aes(hb_name, population)) +
   coord_flip()
 ```
 
+### Age distribution
+
+```{r}
+hb_age_pop_over_under_75 <- read_csv(here("clean_data/hb_population_2021_by_age.csv"))
+```
+
+```{r}
+hb_age_pop_over_under_75 %>% 
+    select(area_code, area_name, sex, all_ages, under_75, over_75) %>% 
+  mutate(percent_over_75 = over_75 / all_ages * 100) %>% 
+  mutate(area_name = fct_reorder(area_name, percent_over_75)) %>% 
+  filter(area_name != "Scotland") %>% 
+  filter(sex == "Persons") %>% 
+  ggplot()+
+  geom_col(aes(area_name, percent_over_75)) +
+  coord_flip()
+
+
+```
+
+```{r}
+hb_age_pop_over_under_75 %>% 
+    select(area_code, area_name, sex, all_ages, under_75, over_75) %>% 
+  pivot_longer(cols = c("under_75", "over_75"), names_to = "over_under_75", 
+               values_to = "num_people") %>% 
+  filter(sex == "Persons") %>% 
+  mutate(area_name = fct_reorder(area_name, num_people)) %>% 
+  ggplot(aes(area_name, num_people, fill = over_under_75)) +
+  geom_col(position = "fill") +
+  coord_flip()
 
 
 
+```
 
+```{r}
 
-
-
-
-
-
-
-
-
-
-
+```
 
 
 
@@ -436,6 +459,42 @@ saveWidget(hb_discharge_easr, here("map_files/hb_discharge_easr.html"))
 # For fill colours
 # http://www.sthda.com/english/wiki/colors-in-r
 ```
+
+
+
+
+```{r}
+mortality_hb_totals <- mortality_hb %>% 
+  filter(hbr != "S92000003",
+         sex == "All",
+         age == "All", 
+         diagnosis == "Cerebrovascular Disease",
+         year == 2021) %>% 
+  select(-c("year", "hbr", "age", "sex", "diagnosis")) %>% 
+  mutate(hbr_name = recode(hbr_name, "Ayrshire & Arran" = "Ayrshire and Arran",
+                           "Dumfries & Galloway" = "Dumfries and Galloway",
+                           "Greater Glasgow & Clyde" = "Greater Glasgow and Clyde"))
+
+sf_hb_mort_data <- left_join(scot_hb_shapefile, mortality_hb_totals, 
+                             by = c("HBName" = "hbr_name")) %>% 
+  mutate(crude_rate = round(crude_rate, 0),
+         easr = round(easr, 0))
+
+rm(mortality_hb, mortality_hb_totals)
+```
+
+### Mortality - health boards compared to Scotland average
+
+```{r}
+
+
+mortality_hb_totals %>% 
+  ggplot() +
+  geom_col(aes(hbr_name, easr))
+```
+
+
+
 
 
 ## Q5 Future Predictions
@@ -583,12 +642,60 @@ mortality_all_predictions <- mortality_hb_for_fitting_easr %>%
   bind_rows(mortality_pred_2022_2034)
 ```
 
+#### All mortaltiy data 
 
 ```{r}
 mortality_all_predictions %>% 
-  group_by(year, real_or_pred, diagnosis, hbr_name) %>% 
+  group_by(year, real_or_pred) %>% 
   summarise(mean_easr = mean(easr)) %>% 
   ggplot(aes(year, mean_easr)) +
   geom_point(aes(colour = real_or_pred)) +
-  facet_wrap(hbr_name~diagnosis, scale = "free_y")
+  theme_fc()
 ```
+
+#### By health board
+
+
+
+```{r}
+mortality_all_predictions %>% 
+  group_by(year, real_or_pred, hbr_name) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(year, mean_easr)) +
+  geom_point(aes(colour = real_or_pred)) +
+  facet_wrap(~hbr_name)
+```
+
+### By Age
+
+```{r}
+mortality_all_predictions %>% 
+  group_by(year, real_or_pred, age) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(year, mean_easr)) +
+  geom_point(aes(colour = real_or_pred)) +
+  facet_wrap(~age, scale = "free_y")
+```
+
+#### By diagnosis
+
+```{r}
+mortality_all_predictions %>% 
+  group_by(year, real_or_pred, diagnosis) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(year, mean_easr)) +
+  geom_point(aes(colour = real_or_pred)) +
+  facet_wrap(~diagnosis, scale = "free_y", nrow = 2)
+```
+
+### By sex
+
+```{r}
+mortality_all_predictions %>% 
+  group_by(year, real_or_pred, sex) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(year, mean_easr)) +
+  geom_point(aes(colour = real_or_pred)) +
+  facet_wrap(~sex, scale = "free_y", nrow = 1)
+```
+

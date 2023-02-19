@@ -18,7 +18,7 @@ library(janitor)
 library(GGally) # ggpairs
 library(ggfortify)
 library(modelr) # add_residuals and add_predictions
-library(relaimpo)
+#library(relaimpo) # masks select function
 library(glmulti)
 library(ggpubr)
 library(broom)
@@ -671,6 +671,8 @@ The final dataset containing all the predictions is: `future_predictions`
 
 ## glmulti
 
+### Without logging easr
+
 ```{r}
 activity_glmulti <- activity_hb_for_fitting_easr %>% 
   mutate_if(is.character, as.factor)
@@ -721,6 +723,8 @@ write(glmulti_mod_dis_13, file = here("clean_data/glmulti_discharge"))
 ```
 
 
+### Exhaustive model with log(easr)
+
 ```{r}
 
 glmulti_fit_logged_genetic <- glmulti(
@@ -730,7 +734,7 @@ glmulti_fit_logged_genetic <- glmulti(
   minsize = 0, # no min size of model
   maxsize = -1, # -1 = no max size of model
   marginality = TRUE, # marginality here means the same as 'strongly hierarchical' interactions, i.e. include pairwise interactions only if both predictors present in the model as main effects.
-  method = "g", # h is exhaustive, g is genetic, l is fast exhaustive (needs leaps), 
+  method = "h", # h is exhaustive, g is genetic, l is fast exhaustive (needs leaps), 
   # d is simple summary of candidate set printed
   crit = bic, # criteria for model selection is BIC value (lower is better)
   plotty = FALSE, # don't plot models as function runs
@@ -739,6 +743,19 @@ glmulti_fit_logged_genetic <- glmulti(
   fitfunction = lm # fit using the `lm` function
 )
 ```
+
+```{r}
+# renaming as was exhaustive not genetic model
+glmulti_fit_logged_exhaust <- glmulti_fit_logged_genetic
+
+optimal_model <- glmulti_fit_logged_exhaust@objects[[1]]
+
+summary(optimal_model)
+
+glance(optimal_model)
+```
+
+R2 is 0.81 - not that much better than my manual model but a lot of terms added. 
 
 
 ## All Scotland predictions

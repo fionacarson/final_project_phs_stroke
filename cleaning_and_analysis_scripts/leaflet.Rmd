@@ -233,7 +233,7 @@ mytext_mort_hb <- paste(
   lapply(htmltools::HTML)
 
 # originally used colorQuantile but colorNumeric creates a continuous color range 
-# for continous input which is what we have. 
+# for continuous input which is what we have. 
 pal_mort_hb <- colorNumeric(
   palette = "Purples",
   domain = sf_hb_mort_data$easr)
