@@ -28,6 +28,8 @@ library(here)
 library(sf)
 library(leaflet)
 library(htmlwidgets)
+library(modelr) # add_residuals and add_predictions
+library(broom) # glance - for checking AIC, BIC of models
 ```
 
 ```{r}
@@ -433,4 +435,160 @@ saveWidget(hb_discharge_easr, here("map_files/hb_discharge_easr.html"))
 
 # For fill colours
 # http://www.sthda.com/english/wiki/colors-in-r
+```
+
+
+## Q5 Future Predictions
+
+```{r}
+mortality_hb_for_fitting_easr <- mortality_hb %>% 
+  select(-hbr, -crude_rate, -number_of_deaths) %>% 
+  # Remove all rows which are combinations of other rows
+  filter(hbr_name != "Scotland",
+         !age %in% c("All", "under 75"),
+         sex != "All",
+         diagnosis != "Cerebrovascular Disease") 
+```
+
+### R2, AIC and BIC
+
+Load all models so we can draw AIC and BIC graphs
+```{r}
+model_mort_1 <- lm(log(1 + easr) ~ age, 
+                      data = mortality_hb_for_fitting_easr)
+model_mort_2 <- lm(log(1 + easr) ~ age + diagnosis, 
+                      data = mortality_hb_for_fitting_easr)
+model_mort_3 <- lm(log(1 + easr) ~ age + diagnosis + hbr_name, 
+                      data = mortality_hb_for_fitting_easr)
+model_mort_4 <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year, 
+                      data = mortality_hb_for_fitting_easr)
+model_mort_5 <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex, 
+                      data = mortality_hb_for_fitting_easr)
+model_mort_6 <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                    diagnosis:age, 
+                      data = mortality_hb_for_fitting_easr)
+model_mort_7 <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                    diagnosis:age + diagnosis:sex, 
+                      data = mortality_hb_for_fitting_easr)
+model_mort_8 <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age  + diagnosis:sex+ age:sex, 
+                      data = mortality_hb_for_fitting_easr)
+model_mort_9 <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age  + diagnosis:sex+ age:sex + age:hbr_name, 
+                      data = mortality_hb_for_fitting_easr)
+model_mort_10 <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age  + diagnosis:sex+ age:sex + age:hbr_name +
+                     diagnosis:age:sex, 
+                      data = mortality_hb_for_fitting_easr)
+```
+
+Pull out all the stats into one dataframe - really need to functionalise this.
+
+```{r}
+mod1_stats <- glance(model_mort_1) %>% 
+  mutate(model_name = "1", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod2_stats <- glance(model_mort_2) %>% 
+  mutate(model_name = "2", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod3_stats <- glance(model_mort_3) %>% 
+  mutate(model_name = "3", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod4_stats <- glance(model_mort_4) %>% 
+  mutate(model_name = "4", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod5_stats <- glance(model_mort_5) %>% 
+  mutate(model_name = "5", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod6_stats <- glance(model_mort_6) %>% 
+  mutate(model_name = "6", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod7_stats <- glance(model_mort_7) %>% 
+  mutate(model_name = "7", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod_8_stats <- glance(model_mort_8) %>% 
+  mutate(model_name = "8", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod_9_stats <- glance(model_mort_9) %>% 
+  mutate(model_name = "9", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod_10_stats <- glance(model_mort_10) %>% 
+  mutate(model_name = "10", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+model_stat_comparison <- bind_rows(
+  mod1_stats, mod2_stats, mod3_stats, mod4_stats, mod5_stats, 
+  mod6_stats, mod7_stats, mod_8_stats, mod_9_stats, mod_10_stats) %>% 
+  mutate(model_name = as.numeric(model_name))
+```
+
+
+```{r}
+"#6d95bf", "#999999", "#9e8fcb", "#f084b6"
+
+model_stat_comparison %>% 
+  ggplot() + 
+  geom_point(aes(model_name, r.squared), colour = "#6d95bf", size = 4) +
+#  geom_point(aes(model_name, adj.r.squared), colour = "#f084b6", size = 3, shape = 17) +
+  theme_fc()
+
+model_stat_comparison %>% 
+  ggplot() + 
+  geom_point(aes(model_name, AIC), colour = "#6d95bf", size = 4) +
+  geom_point(aes(model_name, BIC), colour = "#f084b6", size = 3, shape = 17) +
+  scale_y_continuous(limits = c(10000, 16500)) +
+  theme_fc()
+```
+
+### Real vs Model Values
+
+```{r}
+mortality_predictions_2009_2021 <- mortality_hb_for_fitting_easr %>% 
+  add_predictions(mortality_model) 
+
+mortality_predictions_2009_2021 %>% 
+ggplot(aes(easr, exp(pred))) +
+  geom_point() +
+  geom_abline(colour = "red") +
+  theme_fc()
+```
+
+### Future Predictions
+
+```{r}
+# Create a new fake future dataset for 2022 to 2034 without easr values
+mortality_2022_2034 <- mortality_hb_for_fitting_easr %>% 
+  mutate(year = year + 13) %>% 
+  select(-easr)
+
+# Add predictions from model to future data set. Also add column to label as predictions
+mortality_pred_2022_2034 <- mortality_2022_2034 %>% 
+  add_predictions(mortality_model) %>% 
+  mutate(pred = exp(pred)) %>% 
+  rename("easr" = "pred") %>% 
+  mutate(real_or_pred = "pred")
+
+# Combine future predictions 2022-2034 with real results 2009-2021
+mortality_all_predictions <- mortality_hb_for_fitting_easr %>% 
+  mutate(real_or_pred = "real") %>% 
+  bind_rows(mortality_pred_2022_2034)
+```
+
+
+```{r}
+mortality_all_predictions %>% 
+  group_by(year, real_or_pred, diagnosis, hbr_name) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(year, mean_easr)) +
+  geom_point(aes(colour = real_or_pred)) +
+  facet_wrap(hbr_name~diagnosis, scale = "free_y")
 ```

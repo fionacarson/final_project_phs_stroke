@@ -47,7 +47,7 @@ ggpairs(mortality_hb_for_fitting_easr, progress = FALSE)
 model_mort_1 <- lm(log(1 + easr) ~ age, 
                       data = mortality_hb_for_fitting_easr)
 
-autoplot(model_mort_1)
+#autoplot(model_mort_1)
 
 summary(model_mort_1)
 ```
@@ -62,7 +62,7 @@ mortality_hb_remaining_resid <- mortality_hb_for_fitting_easr %>%
   select(-easr, -age)
 
 
-ggpairs(mortality_hb_remaining_resid, progress = FALSE)
+#ggpairs(mortality_hb_remaining_resid, progress = FALSE)
 ```
 
 
@@ -71,7 +71,7 @@ ggpairs(mortality_hb_remaining_resid, progress = FALSE)
 model_mort_2 <- lm(log(1 + easr) ~ age + diagnosis, 
                       data = mortality_hb_for_fitting_easr)
 
-autoplot(model_mort_2)
+#autoplot(model_mort_2)
 
 summary(model_mort_2)
 ```
@@ -88,14 +88,14 @@ mortality_hb_remaining_resid <- mortality_hb_for_fitting_easr %>%
 
 
 ```{r, message = FALSE}
-ggpairs(mortality_hb_remaining_resid, progress = FALSE)
+#ggpairs(mortality_hb_remaining_resid, progress = FALSE)
 ```
 
 ```{r}
 model_mort_3 <- lm(log(1 + easr) ~ age + diagnosis + hbr_name, 
                       data = mortality_hb_for_fitting_easr)
 
-autoplot(model_mort_3)
+#autoplot(model_mort_3)
 
 summary(model_mort_3)
 ```
@@ -112,7 +112,7 @@ No point in adding residuals nad checking ggpairs as year and sex are only varia
 model_mort_4 <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year, 
                       data = mortality_hb_for_fitting_easr)
 
-autoplot(model_mort_4)
+#autoplot(model_mort_4)
 
 summary(model_mort_4)
 ```
@@ -125,13 +125,13 @@ It is significant to add year.
 
 ## Model 5 - sex
 
-No point in adding residuals nad checking ggpairs as year and sex are only variables left. We need year so lets add it first. 
+
 
 ```{r}
 model_mort_5 <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex, 
                       data = mortality_hb_for_fitting_easr)
 
-autoplot(model_mort_5)
+#autoplot(model_mort_5)
 
 summary(model_mort_5)
 
@@ -141,8 +141,6 @@ anova(model_mort_4, model_mort_5)
 Not significant to add sex (but might be if we look at interactions) so lets leave it in for now. 
 
 
-
-
 Lets try interactions, as I did for discharges. We added:
 admission_type:diagnosis
 age:admission_type
@@ -150,72 +148,571 @@ age:diagnosis
 age:diagnosis:admission_type
 sex:diagnosis
 
-No admission type in this data so lets try:
-age:diagnosis
-sex:diagnosis
-hbr_name:age
+**No admission type in this data so lets try:**
+diagnosis:age
+diagnosis:sex
+diagnosis:hbr_name
+diagnosis:year
+
+age:sex
+age:hbr_name
+age:year
+
+hbr_name:sex
 hbr_name:year
 
+sex:year
 
-## Model 6 - interactions
+
+## Model 6 - interactions - diagnosis:age
 
 ```{r}
 model_mort_6a <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
-                    age:diagnosis, 
+                    diagnosis:age, 
                       data = mortality_hb_for_fitting_easr)
 
 model_mort_6b <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
-                    sex:diagnosis, 
+                    diagnosis:sex, 
                       data = mortality_hb_for_fitting_easr)
 
 model_mort_6c <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
-                    hbr_name:age, 
+                    diagnosis:hbr_name, 
                       data = mortality_hb_for_fitting_easr)
 
 model_mort_6d <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
-                    hbr_name:year, 
+                    diagnosis:year, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_6e <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   age:sex, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_6f <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   age:hbr_name, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_6g <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   age:year, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_6h <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   hbr_name:sex, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_6i <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   hbr_name:year, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_6j <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   sex:year, 
                       data = mortality_hb_for_fitting_easr)
 
 ```
 
 ```{r}
+mod1_stats <- glance(model_mort_1) %>% 
+  mutate(model_name = "1", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod2_stats <- glance(model_mort_2) %>% 
+  mutate(model_name = "2", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod3_stats <- glance(model_mort_3) %>% 
+  mutate(model_name = "3", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod4_stats <- glance(model_mort_4) %>% 
+  mutate(model_name = "4", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
 mod5_stats <- glance(model_mort_5) %>% 
-  mutate(model_name = "model_mort_5", .before = r.squared) %>% 
+  mutate(model_name = "5", .before = r.squared) %>% 
   select(model_name, r.squared, adj.r.squared, AIC, BIC)
 
 mod6a_stats <- glance(model_mort_6a) %>% 
-  mutate(model_name = "model_mort_6a", .before = r.squared) %>% 
+  mutate(model_name = "6a", .before = r.squared) %>% 
   select(model_name, r.squared, adj.r.squared, AIC, BIC)
 
 mod6b_stats <- glance(model_mort_6b) %>% 
-  mutate(model_name = "model_mort_6b", .before = r.squared) %>% 
+  mutate(model_name = "6b", .before = r.squared) %>% 
   select(model_name, r.squared, adj.r.squared, AIC, BIC)
 
 mod6c_stats <- glance(model_mort_6c) %>% 
-  mutate(model_name = "model_mort_6c", .before = r.squared) %>% 
+  mutate(model_name = "6c", .before = r.squared) %>% 
   select(model_name, r.squared, adj.r.squared, AIC, BIC)
 
 mod6d_stats <- glance(model_mort_6d) %>% 
-  mutate(model_name = "model_mort_6d", .before = r.squared) %>% 
+  mutate(model_name = "6d", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod6e_stats <- glance(model_mort_6e) %>% 
+  mutate(model_name = "6e", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod6f_stats <- glance(model_mort_6f) %>% 
+  mutate(model_name = "6f", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod6g_stats <- glance(model_mort_6g) %>% 
+  mutate(model_name = "6g", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod6h_stats <- glance(model_mort_6h) %>% 
+  mutate(model_name = "6h", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod6i_stats <- glance(model_mort_6i) %>% 
+  mutate(model_name = "6i", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod6j_stats <- glance(model_mort_6j) %>% 
+  mutate(model_name = "6j", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+model_stat_comparison <- bind_rows(
+  mod1_stats, mod2_stats, mod3_stats, mod4_stats, mod5_stats, 
+  mod6a_stats, mod6b_stats, mod6c_stats, mod6d_stats, mod6e_stats,
+  mod6f_stats, mod6g_stats, mod6h_stats, mod6i_stats, mod6j_stats)
+```
+
+```{r}
+model_stat_comparison %>% 
+  ggplot(aes(model_name, AIC)) + 
+  geom_point()
+```
+
+diagnosis:age has a huge impact lets add this
+6b and 6f look like they may also have an impact
+6b is diagnosis:sex
+6f is age:hbr_name
+
+
+```{r}
+model_mort_6 <-  model_mort_6a
+
+mod6_stats <- glance(model_mort_6) %>% 
+  mutate(model_name = "6", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+```
+
+```{r}
+anova(model_mort_5, model_mort_6)
+```
+
+It is significant to add age:diagnosis
+
+## Model 7 - interactions - diagnosis:sex
+
+
+```{r}
+model_mort_7b <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                    diagnosis:age + diagnosis:sex, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_7c <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                    diagnosis:age + diagnosis:hbr_name, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_7d <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                    diagnosis:age + diagnosis:year, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_7e <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age + age:sex, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_7f <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age + age:hbr_name, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_7g <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                  diagnosis:age +  age:year, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_7h <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age + hbr_name:sex, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_7i <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age + hbr_name:year, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_7j <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age + sex:year, 
+                      data = mortality_hb_for_fitting_easr)
+```
+
+```{r}
+
+
+mod7b_stats <- glance(model_mort_7b) %>% 
+  mutate(model_name = "7b", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod7c_stats <- glance(model_mort_7c) %>% 
+  mutate(model_name = "7c", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod7d_stats <- glance(model_mort_7d) %>% 
+  mutate(model_name = "7d", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod7e_stats <- glance(model_mort_7e) %>% 
+  mutate(model_name = "7e", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod7f_stats <- glance(model_mort_7f) %>% 
+  mutate(model_name = "7f", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod7g_stats <- glance(model_mort_7g) %>% 
+  mutate(model_name = "7g", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod7h_stats <- glance(model_mort_7h) %>% 
+  mutate(model_name = "7h", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod7i_stats <- glance(model_mort_7i) %>% 
+  mutate(model_name = "7i", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod7j_stats <- glance(model_mort_7j) %>% 
+  mutate(model_name = "7j", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+model_stat_comparison <- bind_rows(
+  mod1_stats, mod2_stats, mod3_stats, mod4_stats, mod5_stats, 
+  mod6_stats, mod7b_stats, mod7c_stats, mod7d_stats, mod7e_stats,
+  mod7f_stats, mod7g_stats, mod7h_stats, mod7i_stats, mod7j_stats)
+```
+
+
+```{r}
+model_stat_comparison %>% 
+  ggplot(aes(model_name, BIC)) + 
+  geom_point() +
+  scale_y_continuous(limits = c(10000, 13000))
+```
+
+f is lowest AIC but b is lowest BIC
+
+lets add b - diagnosis:sex
+
+```{r}
+model_mort_7 <-  model_mort_7b
+
+mod7_stats <- glance(model_mort_7) %>% 
+  mutate(model_name = "7", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+```
+
+```{r}
+anova(model_mort_6, model_mort_7)
+```
+
+Significant to add diagnosis:sex (this means sex has to stay in model)
+
+## Model 8 - interactions - age:sex
+
+```{r}
+model_mort_8c <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                    diagnosis:age + diagnosis:sex + diagnosis:hbr_name, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_8d <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                    diagnosis:age  + diagnosis:sex+ diagnosis:year, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_8e <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age  + diagnosis:sex+ age:sex, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_8f <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age  + diagnosis:sex+ age:hbr_name, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_8g <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                  diagnosis:age  + diagnosis:sex+  age:year, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_8h <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age  + diagnosis:sex+ hbr_name:sex, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_8i <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age  + diagnosis:sex+ hbr_name:year, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_8j <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age  + diagnosis:sex+ sex:year, 
+                      data = mortality_hb_for_fitting_easr)
+```
+
+
+```{r}
+mod8c_stats <- glance(model_mort_8c) %>% 
+  mutate(model_name = "8c", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod8d_stats <- glance(model_mort_8d) %>% 
+  mutate(model_name = "8d", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod8e_stats <- glance(model_mort_8e) %>% 
+  mutate(model_name = "8e", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod8f_stats <- glance(model_mort_8f) %>% 
+  mutate(model_name = "8f", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod8g_stats <- glance(model_mort_8g) %>% 
+  mutate(model_name = "8g", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod8h_stats <- glance(model_mort_8h) %>% 
+  mutate(model_name = "8h", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod8i_stats <- glance(model_mort_8i) %>% 
+  mutate(model_name = "8i", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod8j_stats <- glance(model_mort_8j) %>% 
+  mutate(model_name = "8j", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+model_stat_comparison <- bind_rows(
+  mod1_stats, mod2_stats, mod3_stats, mod4_stats, mod5_stats, 
+  mod6_stats, mod7_stats, mod8c_stats, mod8d_stats, mod8e_stats,
+  mod8f_stats, mod8g_stats, mod8h_stats, mod8i_stats, mod8j_stats)
+```
+
+
+```{r}
+model_stat_comparison %>% 
+  ggplot(aes(model_name, BIC)) + 
+  geom_point() +
+  scale_y_continuous(limits = c(11000, 12000))
+```
+
+AIC
+8f is really giving much lower AIC than others age:hbr_name
+8e is has a very slightly lower AIC than model 7 age:sex
+
+BIC
+model 7     11593.65
+model 8e    11583.96
+model 8f    11597.05
+
+
+```{r}
+model_mort_8 <-  model_mort_8e
+
+mod_8_stats <- glance(model_mort_8) %>% 
+  mutate(model_name = "8", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+```
+
+```{r}
+anova(model_mort_7, model_mort_8)
+```
+
+It is signficanat to add age:sex to model
+
+## Model 9 - interactions - age:hbr_name
+
+```{r}
+model_mort_9c <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                    diagnosis:age + diagnosis:sex + age:sex + diagnosis:hbr_name, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_9d <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                    diagnosis:age  + diagnosis:sex+ age:sex + diagnosis:year, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_9f <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age  + diagnosis:sex+ age:sex + age:hbr_name, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_9g <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                  diagnosis:age  + diagnosis:sex+  age:sex + age:year, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_9h <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age  + diagnosis:sex+ age:sex + hbr_name:sex, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_9i <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age  + diagnosis:sex+ age:sex + hbr_name:year, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_9j <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age  + diagnosis:sex+ age:sex + sex:year, 
+                      data = mortality_hb_for_fitting_easr)
+```
+
+```{r}
+mod9c_stats <- glance(model_mort_9c) %>% 
+  mutate(model_name = "9c", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod9d_stats <- glance(model_mort_9d) %>% 
+  mutate(model_name = "9d", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod9f_stats <- glance(model_mort_9f) %>% 
+  mutate(model_name = "9f", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod9g_stats <- glance(model_mort_9g) %>% 
+  mutate(model_name = "9g", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod9h_stats <- glance(model_mort_9h) %>% 
+  mutate(model_name = "9h", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod9i_stats <- glance(model_mort_9i) %>% 
+  mutate(model_name = "9i", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod9j_stats <- glance(model_mort_9j) %>% 
+  mutate(model_name = "9j", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+model_stat_comparison <- bind_rows(
+  mod1_stats, mod2_stats, mod3_stats, mod4_stats, mod5_stats, 
+  mod6_stats, mod7_stats, mod_8_stats, mod9c_stats, mod9d_stats,
+  mod9f_stats, mod9g_stats, mod9h_stats, mod9i_stats, mod9j_stats)
+```
+
+```{r}
+model_stat_comparison %>% 
+  ggplot(aes(model_name, AIC)) + 
+  geom_point() +
+  scale_y_continuous(limits = c(11000, 12000))
+```
+
+Hmmm possible shouldn't add 8f age:hbr_name but AIC improves a lot and BIC only increases by 1 unit. 
+age:hbr_name does also make sense
+
+```{r}
+model_mort_9 <-  model_mort_8f
+
+mod_9_stats <- glance(model_mort_9) %>% 
+  mutate(model_name = "9", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+```
+
+```{r}
+anova(model_mort_8, model_mort_9)
+```
+
+It is significant to add age:hbr_name
+
+## Model 10 - 3-way int - diagnosis:age:sex
+
+Lets stop there with 2-way interactions and try some 3 way
+
+diagnosis:age:sex is the obvious one to try but lets try the others too
+diagnosis:age:hbr_name
+diagnosis:sex:hbr_name
+age:sex:hbr_name
+
+```{r}
+model_mort_10A <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age  + diagnosis:sex+ age:sex + age:hbr_name +
+                     diagnosis:age:sex, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_10B <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age  + diagnosis:sex+ age:sex + age:hbr_name +
+                     diagnosis:age:hbr_name, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_10C <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age  + diagnosis:sex+ age:sex + age:hbr_name +
+                     diagnosis:sex:hbr_name, 
+                      data = mortality_hb_for_fitting_easr)
+
+model_mort_10D <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age  + diagnosis:sex+ age:sex + age:hbr_name +
+                     hbr_name:age:sex, 
+                      data = mortality_hb_for_fitting_easr)
+
+```
+
+```{r}
+mod10A_stats <- glance(model_mort_10A) %>% 
+  mutate(model_name = "10A", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod10B_stats <- glance(model_mort_10B) %>% 
+  mutate(model_name = "10B", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod10C_stats <- glance(model_mort_10C) %>% 
+  mutate(model_name = "10C", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mod10D_stats <- glance(model_mort_10D) %>% 
+  mutate(model_name = "10D", .before = r.squared) %>% 
   select(model_name, r.squared, adj.r.squared, AIC, BIC)
 
 
-
-model_stat_comparison <- bind_rows(mod5_stats,mod6a_stats, mod6b_stats, mod6c_stats, mod6d_stats)
+model_stat_comparison <- bind_rows(
+  mod1_stats, mod2_stats, mod3_stats, mod4_stats, mod5_stats, 
+  mod6_stats, mod7_stats, mod_8_stats, mod_9_stats, mod10A_stats,
+  mod10B_stats, mod10C_stats, mod10D_stats)
 ```
 
-The age:diagnosis improves R2 a lot to 0.82 (and adjusted R2 is good). None of the other interactions make much differences. Lets stop here. 
+```{r}
+model_stat_comparison %>% 
+  ggplot(aes(model_name, BIC)) + 
+  geom_point() +
+  scale_y_continuous(limits = c(10000, 13000))
+```
 
-BIC goes up from 5 to 6b and 6c so lets not add them. 
-
-# MODEL 6A - FINAL MODEL
-
-model_mort_6a <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
-                    age:diagnosis, 
-                      data = mortality_hb_for_fitting_easr)
-                      
-R2 and adjusted R2 are 0.82
-
+10A and 10B have lower AIC than model 9
+10A has slightly lower BIC than model 9. 10B has much higher BIC
+Lets add 10A diagnosis:age:sex and call it quits
 
 
+```{r}
+model_mort_10 <-  model_mort_10A
+
+mod_10_stats <- glance(model_mort_10) %>% 
+  mutate(model_name = "10", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+```
+
+```{r}
+anova(model_mort_9, model_mort_10)
+```
+
+It is significant to add age:sex:diagnosis
+
+## MODEL 10 FINAL MODEL
+
+log(1 + easr) ~ age + diagnosis + hbr_name + year + sex + diagnosis:age + 
+    diagnosis:sex + age:sex + age:hbr_name + diagnosis:age:sex
+    
+    
+    
+```{r}
+model_stat_comparison <- bind_rows(
+  mod1_stats, mod2_stats, mod3_stats, mod4_stats, mod5_stats, 
+  mod6_stats, mod7_stats, mod_8_stats, mod_9_stats, mod_10_stats) %>% 
+  mutate(model_name = as.numeric(model_name))
+```
+    
+```{r}
+model_stat_comparison %>% 
+  ggplot(aes(model_name, BIC)) + 
+  geom_point() #+
+  #scale_y_continuous(limits = c(10000, 13000))
+```
 
