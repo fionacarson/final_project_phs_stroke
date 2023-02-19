@@ -605,7 +605,10 @@ model_stat_comparison %>%
   geom_point(aes(model_name, AIC), colour = "#6d95bf", size = 4) +
   geom_point(aes(model_name, BIC), colour = "#f084b6", size = 3, shape = 17) +
   scale_y_continuous(limits = c(10000, 16500)) +
-  theme_fc()
+  theme_fc() +
+  labs(title  = "AIC and BIC for Mortilty Models",
+       y = "AIC or BIC", 
+       x = "Model Number")
 ```
 
 ### Real vs Model Values

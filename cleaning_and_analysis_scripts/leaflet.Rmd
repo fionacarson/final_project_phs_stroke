@@ -24,7 +24,8 @@ activity_hb <- read_csv(here("clean_data/activity_hb.csv"))
 mortality_hb <- read_csv(here("clean_data/mortality_hb.csv")) 
 
 # simplified shapefile created for group project
-scot_hb_shapefile <- st_read(here::here("map_files/scot_hb_shapefile_simplified.shp"))
+scot_hb_shapefile <- st_read(
+  here::here("map_files/health_board_shapefile_scotland/scot_hb_shapefile_simplified.shp"))
 ```
 
 
