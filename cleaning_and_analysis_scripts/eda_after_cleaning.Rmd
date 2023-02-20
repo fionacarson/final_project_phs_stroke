@@ -530,12 +530,12 @@ activity_hb %>%
          age == "All",
          diagnosis == "Cerebrovascular Disease") %>% 
   ggplot(aes(start_fin_year, easr)) +
-  geom_point() +
-  scale_y_continuous(limits = c(500, 700))
-  
-
-
-
+  geom_point(colour = "#6d95bf", size = 3) +
+  scale_y_continuous(limits = c(500, 700)) +
+  theme_cc_project() +
+  labs(title = "Scotland Discharges - EASR",
+       x = "Year", 
+       y = "EASR")
 ```
 
 

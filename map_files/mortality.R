@@ -5,6 +5,7 @@ library(tidyverse)
 
 
 sf_hb_discharge_mort <- st_read("sf_hb_discharge_mort.shp")
+#sf_hb_discharge_mort <- st_read("map_files/sf_hb_discharge_mort.shp")
 
 # ESRI driver renames columns when writing file so have to rename them here
 sf_hb_discharge_mort <- sf_hb_discharge_mort %>% 
@@ -69,18 +70,11 @@ server <- function(input, output) {
                   label = mytext_mort_hb,
                   labelOptions = labelOptions( 
                     style = list("font-weight" = "normal", padding = "3px 8px"), 
-                    textsize = "13px", 
+                    textsize = "8px", 
                     direction = "auto",
                     opacity = 0.75)
 )
   }) 
-  
-  
-  
-  
-  
-  
-  
   
   
   

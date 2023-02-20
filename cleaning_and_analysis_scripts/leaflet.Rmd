@@ -17,7 +17,7 @@ library(tidyverse)
 library(htmlwidgets)
 ```
 
-## Health Board - Discharges
+## Adding health board data to shapefile
 
 ```{r}
 activity_hb <- read_csv(here("clean_data/activity_hb.csv"))
@@ -28,6 +28,7 @@ scot_hb_shapefile <- st_read(
   here::here("map_files/health_board_shapefile_scotland/scot_hb_shapefile_simplified.shp"))
 ```
 
+## Adding health board data to shapefile
 
 ```{r}
 # Adding discharge data to shapefile
@@ -45,6 +46,26 @@ discharge_hb_totals <- activity_hb %>%
   rename("discharge_crude_rate" = "crude_rate",
          "discharge_easr" = "easr")
 
+# Combining island data
+
+island_averages_disch <- discharge_hb_totals %>% 
+  filter(hbr_name %in% c("Orkney", "Shetland", "Western Isles")) %>% 
+  summarise(number_of_discharges = mean(number_of_discharges), 
+            discharge_crude_rate = mean(discharge_crude_rate), 
+            discharge_easr = mean(discharge_easr))  
+  
+hbr_name <- c("Orkney", "Shetland", "Western Isles")
+
+island_averages_disch <- island_averages_disch %>% 
+  slice(rep(1, each = 3)) %>% 
+  cbind(hbr_name)
+
+discharge_hb_totals <- discharge_hb_totals %>% 
+  filter(!hbr_name %in% c("Orkney", "Shetland", "Western Isles")) %>% 
+  rbind(island_averages_disch)
+
+# Adding discharge data to shapefile
+
 sf_hb_stroke_data <- left_join(scot_hb_shapefile, discharge_hb_totals, by = c("HBName" = "hbr_name"))
 
 # Adding mortality data to shapefile
@@ -60,31 +81,50 @@ mortality_hb_totals <- mortality_hb %>%
                            "Greater Glasgow & Clyde" = "Greater Glasgow and Clyde")) %>%   rename("mortality_crude_rate" = "crude_rate",
          "mortality_easr" = "easr")
 
+# Combining island data
+island_averages_mort <- mortality_hb_totals %>% 
+  filter(hbr_name %in% c("Orkney", "Shetland", "Western Isles")) %>% 
+  summarise(number_of_deaths = mean(number_of_deaths), 
+            mortality_crude_rate = mean(mortality_crude_rate), 
+            mortality_easr = mean(mortality_easr))  
+
+island_averages_mort <- island_averages_mort %>% 
+  slice(rep(1, each = 3)) %>% 
+  cbind(hbr_name)
+
+mortality_hb_totals <- mortality_hb_totals %>% 
+  filter(!hbr_name %in% c("Orkney", "Shetland", "Western Isles")) %>% 
+  rbind(island_averages_mort)
+
+# Adding mortality data to shapefile
+
 sf_hb_discharge_mort_data <- left_join(sf_hb_stroke_data, mortality_hb_totals, 
                              by = c("HBName" = "hbr_name")) %>% 
-  mutate(discharge_crude_rate = round(discharge_crude_rate, 0),
+# Need to round all values so lots of decimal places don't appear in tooltip on map
+  mutate(number_of_discharges = round(number_of_discharges, 0),
+    discharge_crude_rate = round(discharge_crude_rate, 0),
          discharge_easr = round(discharge_easr, 0),
+    number_of_deaths = round(number_of_deaths, 0),
          mortality_crude_rate = round(mortality_crude_rate, 0),
          mortality_easr = round(mortality_easr, 0))
 
-rm(activity_hb, discharge_hb_totals, mortality_hb, mortality_hb_totals,
-   scot_hb_shapefile, sf_hb_stroke_data)
+#rm(activity_hb, discharge_hb_totals, mortality_hb, mortality_hb_totals,
+#   scot_hb_shapefile, sf_hb_stroke_data, island_averages_disch, hbr_name,
+#   island_averages_mort)
 
-st_write(sf_hb_discharge_mort_data, "sf_hb_discharge_mort.shp", driver="ESRI Shapefile")
+#st_write(sf_hb_discharge_mort_data, 
+#         here("map_files/sf_hb_discharge_mort.shp"), 
+#         driver="ESRI Shapefile",
+#         append = FALSE)
 
 ```
 
 
-https://r-graph-gallery.com/183-choropleth-map-with-leaflet.html
+## Adding council data to shapefile
 
-In a choropleth map, each region has a color that represents the value of a numeric variable (population here).
-
-It is a good practice to check the distribution of this variable to understand what kind of color scale should be used. Using a histogram is often a good option for that:
 
 
 ```{r}
-
-
 
 # Prepare the text for tooltips:
 mytext_dis_hb <- paste(

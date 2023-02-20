@@ -21,6 +21,7 @@ There were a lot of missing values for Orkney, Shetland and Western Isles due to
 
 To determine which diagnosis is most common the number of diagnosis and number of deaths values were used, rather than the crude rates or easr. It was felt it was more important to know the actual number than a number adjusted for 100,000 of population (crude rate) or age adjusted (easr).
 
+Sometimes the islands were combined.
 
 ```{r}
 library(tidyverse)
@@ -34,7 +35,7 @@ library(broom) # glance - for checking AIC, BIC of models
 
 ```{r}
 source(here("theme_palette_etc/plot_theme.R"))
-source(here("theme_palette_etc/palette.R"))
+#source(here("theme_palette_etc/palette.R"))
 ```
 
 ```{r}
@@ -51,71 +52,30 @@ The unadultered values are used for this analysis as we are looking for the most
 
 ```{r}
 activity_hb %>% 
-# filter so we only have most recent 10 years
+  # filter so we only have most recent 10 years
   filter(!financial_year %in% c("2009/10", "2010/11", "2011/12")) %>% 
-# filter so we have all Scotland, ages, sex and admission types but not the CVD 
-# total in diagnosis variable.
-    filter(hbr == "S92000003" &
-          age == "All" &
-          sex == "All" &
-          admission_type == "All" &
-          diagnosis != "Cerebrovascular Disease") %>% 
-# group by diagnosis and then take the mean over the 10 year period
-    group_by(diagnosis) %>% 
+  # filter so we have all Scotland, ages, sex and admission types but not the CVD 
+  # total in diagnosis variable.
+  filter(hbr == "S92000003" &
+           age == "All" &
+           sex == "All" &
+           admission_type == "All" &
+           diagnosis != "Cerebrovascular Disease") %>% 
+  # group by diagnosis and then take the mean over the 10 year period
+  group_by(diagnosis) %>% 
   summarise(mean_num_discharges = mean(number_of_discharges)) %>% 
   mutate(diagnosis = fct_reorder(diagnosis, mean_num_discharges)) %>% 
   ggplot(aes(diagnosis, mean_num_discharges)) +
   geom_col(fill = c("#6d95bf", "#999999", "#9e8fcb", "#f084b6")) +
-  theme_fc() +
-  labs(title = "Discharges by Cerebrovascular Disease Diagnosis",
+  theme_cc_project() +
+  theme(axis.title.y = element_blank()) +
+  labs(title = "Discharges by CVD Diagnosis",
        subtitle = "10 year average", 
-       y = "Annual Number of Discharges",
-       x = "CVD Diagnosis") +
+       y = "Annual Number of Discharges") +
   coord_flip() +
   # code to wrap text so it goes over two lines
   scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) 
 
-activity_hb %>% 
-  filter(!financial_year %in% c("2009/10", "2010/11", "2011/12")) %>% 
-  filter(hbr == "S92000003" &
-          age == "All" &
-          sex == "All" &
-          admission_type == "All" &
-          diagnosis != "Cerebrovascular Disease") %>% 
-  group_by(diagnosis) %>% 
-  summarise(mean_crude_rate = mean(crude_rate)) %>% 
-  mutate(diagnosis = fct_reorder(diagnosis, mean_crude_rate)) %>% 
-  ggplot(aes(diagnosis, mean_crude_rate)) +
-  geom_col(fill = c("#6d95bf", "#999999", "#9e8fcb", "#f084b6")) +
-  theme_fc() +
-  labs(title = "Discharges by Cerebrovascular Disease Diagnosis",
-       subtitle = "10 year average", 
-       y = "Mean Crude Rate",
-       x = "CVD Diagnosis") +
-  coord_flip() +
-  # code to wrap text so it goes over two lines
-  scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) 
-
-activity_hb %>% 
- filter(!financial_year %in% c("2009/10", "2010/11", "2011/12")) %>% 
-  filter(hbr == "S92000003" &
-          age == "All" &
-          sex == "All" &
-          admission_type == "All" &
-          diagnosis != "Cerebrovascular Disease") %>% 
-  group_by(diagnosis) %>% 
-  summarise(mean_easr = mean(easr)) %>% 
-  mutate(diagnosis = fct_reorder(diagnosis, mean_easr)) %>% 
-  ggplot(aes(diagnosis, mean_easr)) +
-  geom_col(fill = c("#6d95bf", "#999999", "#9e8fcb", "#f084b6")) +
-  theme_fc() +
-  labs(title = "Discharges by Cerebrovascular Disease Diagnosis",
-       subtitle = "10 year average", 
-       y = "EASR",
-       x = "CVD Diagnosis") +
-  coord_flip() +
-  # code to wrap text so it goes over two lines
-  scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) 
 ```
 
 Stroke is by far the most common diagnosis for patients who are discharged. 
@@ -134,11 +94,11 @@ mortality_hb %>%
   mutate(diagnosis = fct_reorder(diagnosis, mean_num_deaths)) %>% 
   ggplot(aes(diagnosis, mean_num_deaths)) +
   geom_col(fill = c("#6d95bf", "#999999", "#9e8fcb")) +
-  theme_fc() +
+  theme_cc_project() +
+    theme(axis.title.y = element_blank()) +
   labs(title = "Cerebrovascular Disease Mortality",
        subtitle = "10 year average", 
-       y = "Annual Number of Deaths",
-       x = "CVD Diagnosis") +
+       y = "Annual Number of Deaths") +
   coord_flip() +
   scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) 
 ```
@@ -350,10 +310,23 @@ hb_population <- read_csv(here("raw_data/health_board_populations.csv"))
 
 ```{r}
 hb_population %>% 
-  mutate(hb_name = fct_reorder(hb_name, population)) %>% 
+  mutate(hb_name = str_remove(hb_name, "NHS ")) %>% 
+    mutate(hb_name = fct_reorder(hb_name, population)) %>% 
+  mutate(hb_name = recode(hb_name, 
+                          "Greater Glasgow and Clyde" = "Grtr Glasgow & Clyde",
+                          "Dumfries and Galloway" = "Dumfries & Galloway")) %>% 
+  mutate(population = population / 1000000) %>% 
 ggplot(aes(hb_name, population)) +
-  geom_col() +
-  coord_flip()
+  geom_col(fill = "#999999") +
+  coord_flip() +
+  labs(title = "Health Board Populations",
+       y = "Population (Millions)") +
+  theme_cc_project() +
+  theme(axis.title.y = element_blank()) +
+  scale_y_continuous(limits = c(0, 1.3))
+  
+  #scale_y_discrete(expand = c(0,0))
+
 ```
 
 ### Age distribution
@@ -367,131 +340,155 @@ hb_age_pop_over_under_75 %>%
     select(area_code, area_name, sex, all_ages, under_75, over_75) %>% 
   mutate(percent_over_75 = over_75 / all_ages * 100) %>% 
   mutate(area_name = fct_reorder(area_name, percent_over_75)) %>% 
+  mutate(area_name = recode(area_name, 
+                          "Greater Glasgow and Clyde" = "Grtr Glasgow & Clyde",
+                          "Dumfries and Galloway" = "Dumfries & Galloway")) %>% 
   filter(area_name != "Scotland") %>% 
   filter(sex == "Persons") %>% 
   ggplot()+
-  geom_col(aes(area_name, percent_over_75)) +
-  coord_flip()
-
-
-```
-
-```{r}
-hb_age_pop_over_under_75 %>% 
-    select(area_code, area_name, sex, all_ages, under_75, over_75) %>% 
-  pivot_longer(cols = c("under_75", "over_75"), names_to = "over_under_75", 
-               values_to = "num_people") %>% 
-  filter(sex == "Persons") %>% 
-  mutate(area_name = fct_reorder(area_name, num_people)) %>% 
-  ggplot(aes(area_name, num_people, fill = over_under_75)) +
-  geom_col(position = "fill") +
-  coord_flip()
-
-
-
-```
-
-```{r}
+  geom_col(aes(area_name, percent_over_75), fill = "#6d95bf") +
+  coord_flip() +
+  labs(title = "Percentage Over 75",
+       y = "Percentage Over 75 (%)") +
+  theme_cc_project() +
+  theme(axis.title.y = element_blank())
 
 ```
 
 
+### Discharges by Health Board
 
-### Leaflet
 
 ```{r}
-# simplified shapefile created for group project
-scot_hb_shapefile <- st_read(here::here("map_files/scot_hb_shapefile_simplified.shp"))
+activity_hb %>% 
+    mutate(start_fin_year = as.numeric(str_extract(financial_year, "^[0-9]{4}")), 
+         .after = financial_year) %>% 
+  select(-financial_year, -hbr) %>%
+    filter(hbr_name == "Scotland",
+         sex == "All",
+         admission_type == "All", 
+         age == "All",
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(start_fin_year, easr)) +
+  geom_point(colour = "#6d95bf", size = 3) +
+  scale_y_continuous(limits = c(500, 700)) +
+  theme_cc_project() +
+  labs(title = "Scotland Discharges - EASR",
+       x = "Year", 
+       y = "EASR")
+```
+
+```{r}
+islands <- activity_hb %>% 
+  filter(hbr_name %in% c("Orkney", "Shetland", "Western Isles")) %>% 
+  group_by(financial_year, admission_type, age, sex, diagnosis) %>% 
+  summarise(number_of_discharges = sum(number_of_discharges),
+            crude_rate = mean(crude_rate),
+            easr = mean(easr)) %>% 
+  mutate(hbr_name = "Islands")
+
+activity_hb_islands <- activity_hb %>% 
+  filter(!hbr_name %in% c("Orkney", "Shetland", "Western Isles")) %>% 
+  bind_rows(islands)
 ```
 
 
 ```{r}
-health_board_totals <- activity_hb %>% 
-  filter(hbr != "S92000003",
+activity_hb_islands %>% 
+    mutate(start_fin_year = as.numeric(str_extract(financial_year, "^[0-9]{4}")), 
+         .after = financial_year) %>% 
+  select(-financial_year, -hbr) %>%
+  filter(hbr_name != "Scotland",
          sex == "All",
          admission_type == "All",
          age == "All", 
-         diagnosis == "Cerebrovascular Disease",
-         financial_year == "2021/22") %>% 
-  select(-c("financial_year", "hbr", "admission_type", "age", "sex", "diagnosis")) %>% 
-  mutate(hbr_name = recode(hbr_name, "Ayrshire & Arran" = "Ayrshire and Arran",
-                           "Dumfries & Galloway" = "Dumfries and Galloway",
-                           "Greater Glasgow & Clyde" = "Greater Glasgow and Clyde"))
-
-sf_stroke_data <- left_join(scot_hb_shapefile, health_board_totals, by = c("HBName" = "hbr_name"))
-```
-
-```{r}
-# Prepare the text for tooltips:
-mytext <- paste(
-    "Health Board: ", sf_stroke_data$HBName,"<br/>", 
-    "EASR: ", sf_stroke_data$easr, "<br/>", 
-    sep="") %>%
-  lapply(htmltools::HTML)
-
-# originally used colorQuantile but colorNumeric creates a continuous color range 
-# for continuous input which is what we have. 
-pal <- colorNumeric(
-  palette = "Purples",
-  domain = sf_stroke_data$easr)
-
-hb_discharge_easr <- leaflet(sf_stroke_data) %>% 
-  addTiles()  %>% 
-  setView( lat=57, lng=-5 , zoom=6) %>%
-  addPolygons(stroke = TRUE, 
-              color = "black", 
-              weight = 1,
-              fillOpacity = 0.8, 
-    #          smoothFactor = 0.5, 
-    #          fillColor = ~colorQuantile("Purples", easr)(easr) ,
-              fillColor = ~pal(easr),
-    label = mytext,
-    labelOptions = labelOptions( 
-      style = list("font-weight" = "normal", padding = "3px 8px"), 
-      textsize = "13px", 
-      direction = "auto"))
-
-hb_discharge_easr 
-
-# save the widget in a html file 
-saveWidget(hb_discharge_easr, here("map_files/hb_discharge_easr.html"))
-
-# For fill colours
-# http://www.sthda.com/english/wiki/colors-in-r
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(start_fin_year, easr)) +
+  geom_point(aes(colour = hbr_name)) +
+  geom_smooth(method = lm, colour = "black", linewidth = 0.4, se = FALSE) +
+  facet_wrap(~hbr_name) +  
+#  stat_regline_equation(aes(label = paste(..eq.label.., ..rr.label.., 
+#                                        sep = "~~~~"))) +
+# plots were coloured according to whether they changed by over or under 100 over the 13 year period
+      scale_colour_manual(values = c("#6d95bf", "grey30", "#f084b6", "grey30","#6d95bf", "#f084b6", "#6d95bf", "grey30","grey30", "#6d95bf", "#f084b6", "grey30")) +
+    theme(legend.position = "none",
+        # changes font size of faceted plot titles. 
+        strip.text = element_text(size = 10, colour = "grey30"),
+        axis.text.y = element_text(size = 8),
+        panel.background = element_blank(),
+        panel.grid.minor = element_line(colour = "grey50", linetype = "dotted"),
+        ) +
+  labs(x = "Year",
+        y = "EASR") +
+  scale_y_continuous(minor_breaks = seq(200, 900, 100))
 ```
 
 
 
 
+### Mortality by Health Board
+
 ```{r}
-mortality_hb_totals <- mortality_hb %>% 
-  filter(hbr != "S92000003",
+mortality_hb %>% 
+  select(-hbr) %>%
+    filter(hbr_name == "Scotland",
+         sex == "All",
+         age == "All",
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, easr)) +
+  geom_point(colour = "#6d95bf", size = 3) +
+  scale_y_continuous(limits = c(0, 125)) +
+  theme_cc_project() +
+  labs(title = "Scotland Mortality - EASR",
+       x = "Year", 
+       y = "EASR")
+```
+
+
+
+
+
+
+```{r}
+islands_mortality <- mortality_hb %>% 
+  filter(hbr_name %in% c("Orkney", "Shetland", "Western Isles")) %>% 
+  group_by(year, age, sex, diagnosis) %>% 
+  summarise(number_of_deaths = sum(number_of_deaths),
+            crude_rate = mean(crude_rate),
+            easr = mean(easr)) %>% 
+  mutate(hbr_name = "Islands")
+
+mortality_hb_islands <- mortality_hb %>% 
+  filter(!hbr_name %in% c("Orkney", "Shetland", "Western Isles")) %>% 
+  bind_rows(islands_mortality)
+
+mortality_hb_islands %>% 
+  filter(hbr_name != "Scotland",
          sex == "All",
          age == "All", 
-         diagnosis == "Cerebrovascular Disease",
-         year == 2021) %>% 
-  select(-c("year", "hbr", "age", "sex", "diagnosis")) %>% 
-  mutate(hbr_name = recode(hbr_name, "Ayrshire & Arran" = "Ayrshire and Arran",
-                           "Dumfries & Galloway" = "Dumfries and Galloway",
-                           "Greater Glasgow & Clyde" = "Greater Glasgow and Clyde"))
-
-sf_hb_mort_data <- left_join(scot_hb_shapefile, mortality_hb_totals, 
-                             by = c("HBName" = "hbr_name")) %>% 
-  mutate(crude_rate = round(crude_rate, 0),
-         easr = round(easr, 0))
-
-rm(mortality_hb, mortality_hb_totals)
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, easr)) +
+  geom_point(colour = "#f084b6") +
+  geom_smooth(method = lm, colour = "black", linewidth = 0.4, se = FALSE) +
+  facet_wrap(~hbr_name) +  
+#  stat_regline_equation(aes(label = paste(..eq.label.., ..rr.label.., 
+#                                        sep = "~~~~"))) +
+    theme(legend.position = "none",
+        # changes font size of faceted plot titles. 
+        strip.text = element_text(size = 10, colour = "grey30"),
+        axis.text.y = element_text(size = 8),
+        panel.background = element_blank(),
+        panel.grid.minor = element_line(colour = "grey50", linetype = "dotted"),
+        ) +
+  labs(x = "Year",
+        y = "EASR") #+
+  #scale_y_continuous(minor_breaks = seq(0, 900, 25))
 ```
 
-### Mortality - health boards compared to Scotland average
-
-```{r}
 
 
-mortality_hb_totals %>% 
-  ggplot() +
-  geom_col(aes(hbr_name, easr))
-```
+
+
 
 
 
@@ -584,6 +581,8 @@ mod_10_stats <- glance(model_mort_10) %>%
   mutate(model_name = "10", .before = r.squared) %>% 
   select(model_name, r.squared, adj.r.squared, AIC, BIC)
 
+mortality_model <- model_mort_10 
+
 model_stat_comparison <- bind_rows(
   mod1_stats, mod2_stats, mod3_stats, mod4_stats, mod5_stats, 
   mod6_stats, mod7_stats, mod_8_stats, mod_9_stats, mod_10_stats) %>% 
@@ -592,23 +591,28 @@ model_stat_comparison <- bind_rows(
 
 
 ```{r}
-"#6d95bf", "#999999", "#9e8fcb", "#f084b6"
-
 model_stat_comparison %>% 
   ggplot() + 
   geom_point(aes(model_name, r.squared), colour = "#6d95bf", size = 4) +
 #  geom_point(aes(model_name, adj.r.squared), colour = "#f084b6", size = 3, shape = 17) +
-  theme_fc()
+  theme_cc_project()
+
+
+colours <- c("AIC" = "#6d95bf", "BIC" = "#f084b6")
 
 model_stat_comparison %>% 
   ggplot() + 
-  geom_point(aes(model_name, AIC), colour = "#6d95bf", size = 4) +
-  geom_point(aes(model_name, BIC), colour = "#f084b6", size = 3, shape = 17) +
+  geom_point(aes(model_name, AIC, colour = "#6d95bf"), size = 4) +
+  geom_point(aes(model_name, BIC, colour = "#f084b6"), size = 3, shape = 17) +
   scale_y_continuous(limits = c(10000, 16500)) +
-  theme_fc() +
-  labs(title  = "AIC and BIC for Mortilty Models",
-       y = "AIC or BIC", 
-       x = "Model Number")
+  theme_cc_project() +
+  labs(y = "AIC or BIC", 
+       x = "Model Number", 
+       color = "Legend") +
+  scale_color_identity(labels = c("AIC", "BIC"),
+    guide = "legend") +
+  scale_x_continuous(breaks = 1:10)
+  
 ```
 
 ### Real vs Model Values
@@ -619,9 +623,13 @@ mortality_predictions_2009_2021 <- mortality_hb_for_fitting_easr %>%
 
 mortality_predictions_2009_2021 %>% 
 ggplot(aes(easr, exp(pred))) +
-  geom_point() +
-  geom_abline(colour = "red") +
-  theme_fc()
+  geom_point(colour = "#999999", alpha = 0.5) +
+  geom_abline(colour = "#f084b6", linewidth = 1) +
+  theme_cc_project() +
+  labs(x = "Real EASR",
+       y = "Predicted EASR \n") + 
+   scale_y_continuous(expand = c(0,0)) +
+  scale_x_continuous(expand = c(0,0), limits = c(0, 1300))
 ```
 
 ### Future Predictions
@@ -653,7 +661,7 @@ mortality_all_predictions %>%
   summarise(mean_easr = mean(easr)) %>% 
   ggplot(aes(year, mean_easr)) +
   geom_point(aes(colour = real_or_pred)) +
-  theme_fc()
+  theme_cc_project()
 ```
 
 #### By health board
@@ -701,4 +709,32 @@ mortality_all_predictions %>%
   geom_point(aes(colour = real_or_pred)) +
   facet_wrap(~sex, scale = "free_y", nrow = 1)
 ```
+
+## Causes of deaths in Scotland
+
+```{r}
+conditions <- c("Heart Disease", "COVID", "Lung Cancer", "CVD", "Dementia")
+percentages <- c(11.1, 7.6, 6.2, 6, 5.6) 
+
+data.frame(conditions, percentages) %>% 
+  mutate(conditions = fct_reorder(conditions, percentages)) %>% 
+  ggplot(aes(conditions, percentages)) + 
+  geom_col(aes(fill = conditions)) +
+  coord_flip() +
+  theme_cc_project() +
+  labs(title = "Top 5 Causes of Death",
+       subtitle = "Scotland - 2021",
+       y = "Percentage of All Deaths",
+       x = "") +
+  scale_fill_manual(values = c("Heart Disease" = "#6d95bf", 
+                               "COVID" = "#6d95bf", 
+                               "Lung Cancer" = "#6d95bf", 
+                               "CVD" = "#9e8fcb",
+                               "Dementia" = "#6d95bf")) +
+  theme(legend.position = "none")
+  
+
+#  "#999999", "#9e8fcb", "#6d95bf", "#f084b6"
+```
+
 
