@@ -47,7 +47,7 @@ ggpairs(mortality_hb_for_fitting_easr, progress = FALSE)
 model_mort_1 <- lm(log(1 + easr) ~ age, 
                       data = mortality_hb_for_fitting_easr)
 
-#autoplot(model_mort_1)
+autoplot(model_mort_1)
 
 summary(model_mort_1)
 ```
@@ -71,7 +71,7 @@ mortality_hb_remaining_resid <- mortality_hb_for_fitting_easr %>%
 model_mort_2 <- lm(log(1 + easr) ~ age + diagnosis, 
                       data = mortality_hb_for_fitting_easr)
 
-#autoplot(model_mort_2)
+autoplot(model_mort_2)
 
 summary(model_mort_2)
 ```
@@ -95,7 +95,7 @@ mortality_hb_remaining_resid <- mortality_hb_for_fitting_easr %>%
 model_mort_3 <- lm(log(1 + easr) ~ age + diagnosis + hbr_name, 
                       data = mortality_hb_for_fitting_easr)
 
-#autoplot(model_mort_3)
+autoplot(model_mort_3)
 
 summary(model_mort_3)
 ```
@@ -112,7 +112,7 @@ No point in adding residuals nad checking ggpairs as year and sex are only varia
 model_mort_4 <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year, 
                       data = mortality_hb_for_fitting_easr)
 
-#autoplot(model_mort_4)
+autoplot(model_mort_4)
 
 summary(model_mort_4)
 ```
@@ -131,7 +131,7 @@ It is significant to add year.
 model_mort_5 <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex, 
                       data = mortality_hb_for_fitting_easr)
 
-#autoplot(model_mort_5)
+autoplot(model_mort_5)
 
 summary(model_mort_5)
 
@@ -717,6 +717,228 @@ model_stat_comparison %>%
 ```
 
 
+## Model 11 - Add all year interactions 
+
+```{r}
+model_mort_11 <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age  + diagnosis:sex+ age:sex + age:hbr_name +
+                     diagnosis:age:sex + year:age + year:sex + year:hbr_name + 
+                     year:diagnosis, 
+                      data = mortality_hb_for_fitting_easr)
+```
+
+
+```{r}
+anova(model_mort_10, model_mort_11)
+```
+
+Not significant to add these year interactions
+
+
+```{r}
+mod_11_stats <- glance(model_mort_11) %>% 
+  mutate(model_name = "11", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+```
+
+```{r}
+model_stat_comparison <- bind_rows(
+  mod1_stats, mod2_stats, mod3_stats, mod4_stats, mod5_stats, 
+  mod6_stats, mod7_stats, mod_8_stats, mod_9_stats, mod_10_stats, mod_11_stats) %>% 
+  mutate(model_name = as.numeric(model_name))
+```
+
+BIC has increased to between model 6 and 7
+AIC has increased very slightly 
+
+Will be interesting to see predictions
+
+```{r}
+mortality_predictions_2009_2021 <- mortality_hb_for_fitting_easr %>% 
+  add_predictions(model_mort_11) 
+
+mortality_predictions_2009_2021 %>% 
+ggplot(aes(easr, exp(pred))) +
+  geom_point(colour = "#999999", alpha = 0.5) +
+  geom_abline(colour = "#f084b6", linewidth = 1) +
+  theme_cc_project() +
+  labs(x = "Real Mortality Rate",
+       y = "Predicted Moralilty Rate \n") + 
+   scale_y_continuous(expand = c(0,0)) +
+  scale_x_continuous(expand = c(0,0), limits = c(0, 1300))
+
+
+
+mortality_predictions_2009_2021 %>% 
+ggplot(aes(easr, exp(pred))) +
+  geom_point(colour = "#999999", alpha = 0.5) +
+  geom_abline(colour = "#f084b6", linewidth = 1) +
+  theme_cc_project() +
+  labs(x = "Real Mortality Rate",
+       y = "Predicted Moralilty Rate \n") + 
+   scale_y_continuous(expand = c(0,0), limits = c(0, 25)) +
+  scale_x_continuous(expand = c(0,0), limits = c(0, 25))
+```
+
+### Density plots
+
+
+```{r}
+mortality_predictions_2009_2021_model_10 <- mortality_hb_for_fitting_easr %>% 
+  add_predictions(model_mort_10)
+
+mortality_predictions_2009_2021_model_11 <- mortality_hb_for_fitting_easr %>% 
+  add_predictions(model_mort_11)
+```
+
+
+
+
+```{r}
+mortality_predictions_2009_2021 %>% 
+  ggplot() +
+  geom_density(data = mortality_predictions_2009_2021_model_10, 
+               mapping = aes(easr), colour = "black") +
+    geom_density(data = mortality_predictions_2009_2021_model_10, 
+               mapping = aes(exp(pred)), colour = "red") +
+    geom_density(data = mortality_predictions_2009_2021_model_11, 
+               mapping = aes(exp(pred)), colour = "blue") +
+  scale_x_continuous(limits = c(000, 3000))
+
+
+
+```
+
+Model seems to be failing for easr numbers < 10
+
+## Future predictions
+
+```{r}
+# Create a new fake future dataset for 2022 to 2034 without easr values
+mortality_2022_2034 <- mortality_hb_for_fitting_easr %>% 
+  mutate(year = year + 13) %>% 
+  select(-easr)
+
+# Add predictions from model to future data set. Also add column to label as predictions
+mortality_pred_2022_2034 <- mortality_2022_2034 %>% 
+  add_predictions(model_mort_11) %>% 
+  mutate(pred = exp(pred)) %>% 
+  rename("easr" = "pred") %>% 
+  mutate(real_or_pred = "pred")
+
+# Combine future predictions 2022-2034 with real results 2009-2021
+mortality_all_predictions <- mortality_hb_for_fitting_easr %>% 
+  mutate(real_or_pred = "real") %>% 
+  bind_rows(mortality_pred_2022_2034)
+```
+
+```{r}
+mortality_all_predictions %>% 
+  group_by(year, real_or_pred) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(year, mean_easr)) +
+  geom_point(aes(colour = real_or_pred), size = 3) +
+  theme_cc_project() +
+  labs(title = "Predicting Mortality Rates 2022 - 2034",
+       y = "Mortality Rates (EASR) \n",
+       x = "Year"
+       ) +
+  scale_color_manual(values = c("#f084b6", "#999999"), 
+                     labels = c("Predicted", "Real"))
+```
+
+```{r}
+mortality_all_predictions %>% 
+  group_by(year, real_or_pred, hbr_name) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(year, mean_easr)) +
+  geom_point(aes(colour = real_or_pred)) +
+  facet_wrap(~hbr_name) +
+  scale_color_manual(values = c("#f084b6", "#999999"), 
+                     labels = c("Predicted", "Real")) +
+  labs(y = "Mortality Rates (EASR) \n",
+       x = "Year")
+```
+
+
+```{r}
+mortality_all_predictions %>% 
+  group_by(year, real_or_pred, age) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(year, mean_easr)) +
+  geom_point(aes(colour = real_or_pred)) +
+  facet_wrap(~age, scale = "free_y")
+```
+
+```{r}
+mortality_all_predictions %>% 
+  group_by(year, real_or_pred, diagnosis) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(year, mean_easr)) +
+  geom_point(aes(colour = real_or_pred)) +
+  facet_wrap(~diagnosis, scale = "free_y", nrow = 2)
+```
+
+The above plots all looks amazing!
+
+## performance package
+
+Dont' think this package tell us anything new!
+
+```{r}
+check_model(model_mort_11)
+```
+
+### Predicted R2
+
+https://rpubs.com/RatherBit/102428
+
+```{r}
+PRESS <- function(linear.model) {
+  #' calculate the predictive residuals
+  pr <- residuals(linear.model)/(1-lm.influence(linear.model)$hat)
+  #' calculate the PRESS
+  PRESS <- sum(pr^2)
+  
+  return(PRESS)
+}
+
+
+
+pred_r_squared <- function(linear.model) {
+  #' Use anova() to get the sum of squares for the linear model
+  lm.anova <- anova(linear.model)
+  #' Calculate the total sum of squares
+  tss <- sum(lm.anova$'Sum Sq')
+  # Calculate the predictive R^2
+  pred.r.squared <- 1-PRESS(linear.model)/(tss)
+  
+  return(pred.r.squared)
+}
+
+model_fit_stats <- function(linear.model) {
+  r.sqr <- summary(linear.model)$r.squared
+  adj.r.sqr <- summary(linear.model)$adj.r.squared
+  ratio.adjr2.to.r2 <- (adj.r.sqr/r.sqr)
+  pre.r.sqr <- pred_r_squared(linear.model)
+  press <- PRESS(linear.model)
+  return.df <- data.frame("R-squared" = r.sqr, "Adj R-squared" = adj.r.sqr, 
+    "Ratio Adj.R2 to R2" = ratio.adjr2.to.r2, "Pred R-squared" = pre.r.sqr, PRESS = press)
+  return(round(return.df,3))
+}
+
+# library(plyr) - don't load masks lots of stuff
+ldply(list(model_mort_10, model_mort_11), model_fit_stats)
+
+```
+
+Hmmm predicted R2 is 0.84 for both - pretty much same as other R2. This is no help.
+
+### Prediction Intervals
+
+```{r}
+predict(model_mort_10, mortality_2022_2034, interval = "predict")
+```
 
 
 

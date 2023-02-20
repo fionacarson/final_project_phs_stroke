@@ -69,7 +69,7 @@ activity_hb %>%
   geom_col(fill = c("#6d95bf", "#999999", "#9e8fcb", "#f084b6")) +
   theme_cc_project() +
   theme(axis.title.y = element_blank()) +
-  labs(title = "Discharges by CVD Diagnosis",
+  labs(title = "Discharges",
        subtitle = "10 year average", 
        y = "Annual Number of Discharges") +
   coord_flip() +
@@ -96,7 +96,7 @@ mortality_hb %>%
   geom_col(fill = c("#6d95bf", "#999999", "#9e8fcb")) +
   theme_cc_project() +
     theme(axis.title.y = element_blank()) +
-  labs(title = "Cerebrovascular Disease Mortality",
+  labs(title = "Mortality",
        subtitle = "10 year average", 
        y = "Annual Number of Deaths") +
   coord_flip() +
@@ -116,6 +116,9 @@ Incidence data was sources from excel files related to the PHS Stroke report but
 
 ```{r, message = FALSE, warning = FALSE}
 activity_hb %>% 
+#  mutate(diagnosis = recode(diagnosis,
+#          "Subarachnoid Haemorrhage" = "Subarach. Haemorrhage",
+#          "TIAs and related syndromes" = "TIAs & related syndromes")) %>% 
   mutate(diagnosis = factor(diagnosis, levels = c("Stroke", 
                                                   "Subarachnoid Haemorrhage",
                                                   "Other CVD",
@@ -134,12 +137,14 @@ activity_hb %>%
   geom_col(aes(fill = diagnosis)) +
   facet_wrap(~diagnosis, scales = "free_y") +
   scale_fill_manual(values = c("#999999", "#9e8fcb", "#6d95bf", "#f084b6")) +
-  theme_fc() + 
+  theme_cc_project() + 
   theme(legend.position = "none",
         # changes font size of faceted plot titles. 
-        strip.text = element_text(size = 14, colour = "grey30")) +
-  labs(title = "Number of Discharges by Age and CVD Type (EASR)",
-       subtitle = "10 year average")
+        strip.text = element_text(size = 16, colour = "grey50")) +
+  labs(title = "Discharges by Age and CVD Type",
+#       subtitle = "10 year average",
+       y = "Discharge Rate (EASR)",
+       x = "Age")
 ```
 
 ### Sex
@@ -165,33 +170,27 @@ activity_sex_diagnosis <- activity_hb %>%
   geom_col(aes(fill = sex)) +
   facet_wrap(~diagnosis, scales = "free_y") +
   scale_fill_manual(values = c("#999999", "#6d95bf")) +
-  theme_fc() + 
+  theme_cc_project() + 
   theme(legend.position = "none",
         # changes font size of faceted plot titles. 
-        strip.text = element_text(size = 14, colour = "grey30")) +
-    labs(title = "Number of Discharges by Sex and CVD Type",
-       subtitle = "10 year average")
-
-  ggplot(activity_sex_diagnosis, aes(sex, mean_crude_rate)) +
-  geom_col(aes(fill = sex)) +
-  facet_wrap(~diagnosis, scales = "free_y") +
-  scale_fill_manual(values = c("#999999", "#6d95bf")) +
-  theme_fc() + 
-  theme(legend.position = "none",
-        # changes font size of faceted plot titles. 
-        strip.text = element_text(size = 14, colour = "grey30"))
+        strip.text = element_text(size = 14, colour = "grey50"),
+        axis.title.x = element_blank()) +
+    labs(title = "Number of Discharges by Sex & CVD Type",
+       y = "Number of Discharges")
 
 
   ggplot(activity_sex_diagnosis, aes(sex, mean_easr)) +
   geom_col(aes(fill = sex)) +
   facet_wrap(~diagnosis, scales = "free_y") +
   scale_fill_manual(values = c("#999999", "#6d95bf")) +
-  theme_fc() + 
+  theme_cc_project() + 
   theme(legend.position = "none",
         # changes font size of faceted plot titles. 
-        strip.text = element_text(size = 14, colour = "grey30")) +
+        strip.text = element_text(size = 14, colour = "grey50"),
+                axis.title.x = element_blank()) +
     labs(title = "Number of Discharges by Sex and CVD Type (EASR)",
-       subtitle = "10 year average")
+        y = "Discharge Rate (EASR)")
+    
 
 ```
 
@@ -237,12 +236,14 @@ mortality_hb %>%
   geom_col(aes(fill = diagnosis)) +
   facet_wrap(~diagnosis, scales = "free_y", nrow = 2) +
   scale_fill_manual(values = c("#999999", "#9e8fcb", "#6d95bf")) +
-  theme_fc() + 
+  theme_cc_project() + 
   theme(legend.position = "none",
         # changes font size of faceted plot titles. 
-        strip.text = element_text(size = 14, colour = "grey30")) +
-    labs(title = "Mortality by Age and CVD Type (EASR)",
-       subtitle = "10 year average")
+        strip.text = element_text(size = 16, colour = "grey50")) +
+    labs(title = "Mortality by Age and CVD Type",
+#       subtitle = "10 year average",
+        x = "Age", 
+        y = "Mortality Rate (EASR)")
 
 
 ```
@@ -268,33 +269,26 @@ mortality_sex_diagnosis <- mortality_hb %>%
   geom_col(aes(fill = sex)) +
   facet_wrap(~diagnosis, scales = "free_y", nrow = 2) +
   scale_fill_manual(values = c("#999999", "#6d95bf")) +
-  theme_fc() + 
+  theme_cc_project() + 
   theme(legend.position = "none",
         # changes font size of faceted plot titles. 
-        strip.text = element_text(size = 14, colour = "grey30")) +
+        strip.text = element_text(size = 14, colour = "grey50"),
+        axis.title.x = element_blank()) +
     labs(title = "Mortality by Sex and CVD Type",
-       subtitle = "10 year average")
-
-  ggplot(mortality_sex_diagnosis, aes(sex, mean_crude_rate)) +
-  geom_col(aes(fill = sex)) +
-  facet_wrap(~diagnosis, scales = "free_y") +
-  scale_fill_manual(values = c("#999999", "#6d95bf")) +
-  theme_fc() + 
-  theme(legend.position = "none",
-        # changes font size of faceted plot titles. 
-        strip.text = element_text(size = 14, colour = "grey30"))
+       y = "Number of Deaths")
 
 
   ggplot(mortality_sex_diagnosis, aes(sex, mean_easr)) +
   geom_col(aes(fill = sex)) +
   facet_wrap(~diagnosis, scales = "free_y", nrow = 2) +
   scale_fill_manual(values = c("#999999", "#6d95bf")) +
-  theme_fc() + 
+  theme_cc_project() + 
   theme(legend.position = "none",
         # changes font size of faceted plot titles. 
-        strip.text = element_text(size = 14, colour = "grey30")) +
+        strip.text = element_text(size = 14, colour = "grey50"),
+        axis.title.x = element_blank()) +
     labs(title = "Mortality by Sex and CVD Type (EASR)",
-       subtitle = "10 year average")
+       y = "Discharge Rate (EASR)")
 
 ```
 
@@ -373,9 +367,9 @@ activity_hb %>%
   geom_point(colour = "#6d95bf", size = 3) +
   scale_y_continuous(limits = c(500, 700)) +
   theme_cc_project() +
-  labs(title = "Scotland Discharges - EASR",
+  labs(title = "Scotland Discharge Rates",
        x = "Year", 
-       y = "EASR")
+       y = "Discharge Rate (EASR) \n")
 ```
 
 ```{r}
@@ -419,7 +413,7 @@ activity_hb_islands %>%
         panel.grid.minor = element_line(colour = "grey50", linetype = "dotted"),
         ) +
   labs(x = "Year",
-        y = "EASR") +
+        y = "Discharge Rate (EASR)") +
   scale_y_continuous(minor_breaks = seq(200, 900, 100))
 ```
 
@@ -439,9 +433,9 @@ mortality_hb %>%
   geom_point(colour = "#6d95bf", size = 3) +
   scale_y_continuous(limits = c(0, 125)) +
   theme_cc_project() +
-  labs(title = "Scotland Mortality - EASR",
+  labs(title = "Scotland Mortality Rates",
        x = "Year", 
-       y = "EASR")
+       y = "Mortality Rate (EASR) \n")
 ```
 
 
@@ -536,6 +530,12 @@ model_mort_10 <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
                    diagnosis:age  + diagnosis:sex+ age:sex + age:hbr_name +
                      diagnosis:age:sex, 
                       data = mortality_hb_for_fitting_easr)
+
+model_mort_11 <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age  + diagnosis:sex+ age:sex + age:hbr_name +
+                     diagnosis:age:sex + year:age + year:sex + year:hbr_name + 
+                     year:diagnosis, 
+                      data = mortality_hb_for_fitting_easr)
 ```
 
 Pull out all the stats into one dataframe - really need to functionalise this.
@@ -581,11 +581,15 @@ mod_10_stats <- glance(model_mort_10) %>%
   mutate(model_name = "10", .before = r.squared) %>% 
   select(model_name, r.squared, adj.r.squared, AIC, BIC)
 
-mortality_model <- model_mort_10 
+mod_11_stats <- glance(model_mort_11) %>% 
+  mutate(model_name = "11", .before = r.squared) %>% 
+  select(model_name, r.squared, adj.r.squared, AIC, BIC)
+
+mortality_model <- model_mort_11 
 
 model_stat_comparison <- bind_rows(
   mod1_stats, mod2_stats, mod3_stats, mod4_stats, mod5_stats, 
-  mod6_stats, mod7_stats, mod_8_stats, mod_9_stats, mod_10_stats) %>% 
+  mod6_stats, mod7_stats, mod_8_stats, mod_9_stats, mod_10_stats, mod_11_stats) %>% 
   mutate(model_name = as.numeric(model_name))
 ```
 
@@ -611,7 +615,7 @@ model_stat_comparison %>%
        color = "Legend") +
   scale_color_identity(labels = c("AIC", "BIC"),
     guide = "legend") +
-  scale_x_continuous(breaks = 1:10)
+  scale_x_continuous(breaks = 1:11)
   
 ```
 
@@ -626,11 +630,26 @@ ggplot(aes(easr, exp(pred))) +
   geom_point(colour = "#999999", alpha = 0.5) +
   geom_abline(colour = "#f084b6", linewidth = 1) +
   theme_cc_project() +
-  labs(x = "Real EASR",
-       y = "Predicted EASR \n") + 
+  labs(x = "Real Mortality Rate",
+       y = "Predicted Moralilty Rate \n") + 
    scale_y_continuous(expand = c(0,0)) +
-  scale_x_continuous(expand = c(0,0), limits = c(0, 1300))
+  scale_x_continuous(expand = c(0,0), limits = c(0, 1300), 
+                     breaks = c(200, 400, 600, 800, 1000, 1200))
+
+
+
+mortality_predictions_2009_2021 %>% 
+ggplot(aes(easr, exp(pred))) +
+  geom_point(colour = "#999999", alpha = 0.5) +
+  geom_abline(colour = "#f084b6", linewidth = 1) +
+  theme_cc_project() +
+  labs(x = "Real Mortality Rate",
+       y = "Predicted Moralilty Rate \n") + 
+   scale_y_continuous(expand = c(0,0), limits = c(0, 25)) +
+  scale_x_continuous(expand = c(0,0), limits = c(0, 25))
 ```
+
+
 
 ### Future Predictions
 
@@ -660,13 +679,17 @@ mortality_all_predictions %>%
   group_by(year, real_or_pred) %>% 
   summarise(mean_easr = mean(easr)) %>% 
   ggplot(aes(year, mean_easr)) +
-  geom_point(aes(colour = real_or_pred)) +
-  theme_cc_project()
+  geom_point(aes(colour = real_or_pred), size = 3) +
+  theme_cc_project() +
+  labs(title = "Predicting Mortality Rates 2022 - 2034",
+       y = "Mortality Rates (EASR) \n",
+       x = "Year"
+       ) +
+  scale_color_manual(values = c("#f084b6", "#999999"), 
+                     labels = c("Predicted", "Real"))
 ```
 
 #### By health board
-
-
 
 ```{r}
 mortality_all_predictions %>% 
@@ -674,10 +697,21 @@ mortality_all_predictions %>%
   summarise(mean_easr = mean(easr)) %>% 
   ggplot(aes(year, mean_easr)) +
   geom_point(aes(colour = real_or_pred)) +
-  facet_wrap(~hbr_name)
+  facet_wrap(~hbr_name) +
+  scale_color_manual(values = c("#f084b6", "#999999"), 
+                     labels = c("Predicted", "Real")) +
+  labs(y = "Mortality Rates (EASR) \n",
+       x = "Year")
 ```
 
-### By Age
+
+
+
+
+
+
+
+#### By Age
 
 ```{r}
 mortality_all_predictions %>% 
@@ -709,6 +743,103 @@ mortality_all_predictions %>%
   geom_point(aes(colour = real_or_pred)) +
   facet_wrap(~sex, scale = "free_y", nrow = 1)
 ```
+
+#### "Good Predictions"
+
+```{r, message = FALSE}
+mortality_all_predictions %>% 
+  filter(hbr_name == "Ayrshire & Arran") %>% 
+  group_by(year, real_or_pred, hbr_name) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(year, mean_easr)) +
+  geom_point(aes(colour = real_or_pred), size = 3) +
+  scale_color_manual(values = c("#f084b6", "#999999"), 
+                     labels = c("Predicted", "Real")) +
+  theme_cc_project() +
+    theme(legend.position = "none") +
+  labs(title = "Ayrshire & Arran",
+       y = "Mortality Rates (EASR) \n",
+       x = "Year")
+  
+mortality_all_predictions %>% 
+  filter(age == "65-74") %>% 
+  group_by(year, real_or_pred, age) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(year, mean_easr)) +
+  geom_point(aes(colour = real_or_pred), size = 3) +
+  scale_color_manual(values = c("#f084b6", "#999999"), 
+                     labels = c("Predicted", "Real")) +
+  theme_cc_project() +
+    theme(legend.position = "none") +
+  labs(title = "Age 65 - 74",
+       y = "Mortality Rates (EASR) \n",
+       x = "Year")
+
+mortality_all_predictions %>% 
+  filter(diagnosis == "Other CVD") %>% 
+  group_by(year, real_or_pred, diagnosis) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(year, mean_easr)) +
+  geom_point(aes(colour = real_or_pred), size = 3) +
+  scale_color_manual(values = c("#f084b6", "#999999"), 
+                     labels = c("Predicted", "Real")) +
+  theme_cc_project() +
+    theme(legend.position = "none") +
+  labs(title = "Other CVD",
+       y = "Mortality Rates (EASR) \n",
+       x = "Year")
+```
+
+#### "Bad Predictions
+
+```{r, message = FALSE}
+mortality_all_predictions %>% 
+  filter(hbr_name == "Greater Glasgow & Clyde") %>% 
+  group_by(year, real_or_pred, hbr_name) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(year, mean_easr)) +
+  geom_point(aes(colour = real_or_pred), size = 3) +
+  scale_color_manual(values = c("#f084b6", "#999999"), 
+                     labels = c("Predicted", "Real")) +
+  theme_cc_project() +
+    theme(legend.position = "none") +
+  labs(title = "Greater Glasgow & Clyde",
+       y = "Mortality Rates (EASR) \n",
+       x = "Year")
+  
+mortality_all_predictions %>% 
+  filter(age == "over 75") %>% 
+  group_by(year, real_or_pred, age) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(year, mean_easr)) +
+  geom_point(aes(colour = real_or_pred), size = 3) +
+  scale_color_manual(values = c("#f084b6", "#999999"), 
+                     labels = c("Predicted", "Real")) +
+  theme_cc_project() +
+    theme(legend.position = "none") +
+  labs(title = "Age Over 75",
+       y = "Mortality Rates (EASR) \n",
+       x = "Year")
+
+mortality_all_predictions %>% 
+  filter(diagnosis == "Stroke") %>% 
+  group_by(year, real_or_pred, diagnosis) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(year, mean_easr)) +
+  geom_point(aes(colour = real_or_pred), size = 3) +
+  scale_color_manual(values = c("#f084b6", "#999999"), 
+                     labels = c("Predicted", "Real")) +
+  theme_cc_project() +
+  theme(legend.position = "none") +
+  labs(title = "Stroke",
+       y = "Mortality Rates (EASR) \n",
+       x = "Year")
+```
+
+
+
+
+
 
 ## Causes of deaths in Scotland
 
