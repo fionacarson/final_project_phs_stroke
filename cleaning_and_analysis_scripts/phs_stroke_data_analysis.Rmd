@@ -188,7 +188,7 @@ activity_sex_diagnosis <- activity_hb %>%
         # changes font size of faceted plot titles. 
         strip.text = element_text(size = 14, colour = "grey50"),
                 axis.title.x = element_blank()) +
-    labs(title = "Number of Discharges by Sex and CVD Type (EASR)",
+    labs(title = "Discharges",
         y = "Discharge Rate (EASR)")
     
 
@@ -287,7 +287,7 @@ mortality_sex_diagnosis <- mortality_hb %>%
         # changes font size of faceted plot titles. 
         strip.text = element_text(size = 14, colour = "grey50"),
         axis.title.x = element_blank()) +
-    labs(title = "Mortality by Sex and CVD Type (EASR)",
+    labs(title = "Mortality",
        y = "Discharge Rate (EASR)")
 
 ```
@@ -645,8 +645,21 @@ ggplot(aes(easr, exp(pred))) +
   theme_cc_project() +
   labs(x = "Real Mortality Rate",
        y = "Predicted Moralilty Rate \n") + 
-   scale_y_continuous(expand = c(0,0), limits = c(0, 25)) +
-  scale_x_continuous(expand = c(0,0), limits = c(0, 25))
+   scale_y_continuous(expand = c(0,0), limits = c(0, 100)) +
+  scale_x_continuous(expand = c(0,0), limits = c(0, 100))
+
+mortality_predictions_2009_2021 %>% 
+ggplot(aes(easr, exp(pred))) +
+  geom_point(colour = "#999999", alpha = 0.5) +
+  geom_abline(colour = "#f084b6", linewidth = 1) +
+    geom_abline(slope = 0.8, colour = "black", linewidth = 1) +
+    geom_abline(slope = 1.2, colour = "black", linewidth = 1) +
+  theme_cc_project() +
+  labs(title = "black lines are +/- 20% of real mortality rate",
+    x = "Real Mortality Rate",
+       y = "Predicted Moralilty Rate \n") #+ 
+ #  scale_y_continuous(expand = c(0,0), limits = c(0, 25)) +
+ # scale_x_continuous(expand = c(0,0), limits = c(0, 25))
 ```
 
 
@@ -755,7 +768,9 @@ mortality_all_predictions %>%
     theme(legend.position = "none") +
   labs(title = "Tayside",
        y = "Mortality Rates (EASR) \n",
-       x = "Year")
+       x = "Year") +
+  scale_y_continuous(limits = c(30, 100)) +
+    scale_x_continuous(limits = c(2008, 2035), n.breaks = 7) 
   
 mortality_all_predictions %>% 
   filter(age == "over 75") %>% 
@@ -783,7 +798,8 @@ mortality_all_predictions %>%
     theme(legend.position = "none") +
   labs(title = "Stroke",
        y = "Mortality Rates (EASR) \n",
-       x = "Year")
+       x = "Year") +
+      scale_x_continuous(limits = c(2008, 2035), n.breaks = 7) 
 ```
 
 #### "Bad Predictions
@@ -801,7 +817,9 @@ mortality_all_predictions %>%
     theme(legend.position = "none") +
   labs(title = "Grampian",
        y = "Mortality Rates (EASR) \n",
-       x = "Year")
+       x = "Year") +
+    scale_y_continuous(limits = c(30, 100)) +
+    scale_x_continuous(limits = c(2008, 2035), n.breaks = 7) 
   
 mortality_all_predictions %>% 
   filter(age == "65-74") %>% 
@@ -815,7 +833,8 @@ mortality_all_predictions %>%
     theme(legend.position = "none") +
   labs(title = "Age 65 - 74",
        y = "Mortality Rates (EASR) \n",
-       x = "Year")
+       x = "Year") +
+      scale_x_continuous(limits = c(2008, 2035), n.breaks = 7) 
 
 ```
 
@@ -826,13 +845,72 @@ mortality_all_predictions %>%
 Website saying that you need to divide rmse by the mean of the predicted value (not sure if its the original data or predicted?)
 
 ```{r}
-# RMSE for model 11 (mortality model) is 0.849
-RMSE <- 0.849
-
-mortality_hb_for_fitting_easr %>% 
-  summarise(mean_easr = mean(easr)) %>% 
-  summarise(result = RMSE / mean_easr * 100)
+library(Metrics)
 ```
+
+```{r}
+mortality_predictions_2009_2021
+
+rmse(mortality_predictions_2009_2021$easr, exp(mortality_predictions_2009_2021$pred))
+
+```
+
+#### Splitting data into high and low easr
+
+Lets split data into 
+1) 2 to infinity
+2) 2 - 100
+3) > 100
+
+
+2 to infinity
+```{r}
+mortality_hb_for_fitting_easr_2_inf <- mortality_hb_for_fitting_easr %>% 
+# 1797 rows removed (41% data) where easr = 0 or 1
+  filter(easr > 2)  
+
+mortality_predictions_2_inf <- mortality_hb_for_fitting_easr_2_inf %>% 
+  add_predictions(mortality_model) 
+
+rmse(mortality_predictions_2_inf$easr, exp(mortality_predictions_2_inf$pred))
+
+```
+
+RMSE is higher without zeros and ones
+
+2 - 100
+
+```{r}
+mortality_hb_for_fitting_easr_2_100 <- mortality_hb_for_fitting_easr %>% 
+# 1797 rows removed (41% data) where easr = 0 or 1
+  filter(easr > 2) %>% 
+# 745 rows removed (17% of original data) down to 42% of original data
+  filter(easr < 101)
+
+mortality_predictions_2_100 <- mortality_hb_for_fitting_easr_2_100 %>% 
+  add_predictions(mortality_model) 
+
+rmse(mortality_predictions_2_100$easr, exp(mortality_predictions_2_100$pred))
+```
+
+This improves RMSE a lot but 17 seems a lot for values between 2 and 100!
+
+>100
+
+```{r}
+mortality_hb_for_fitting_easr_above_100 <- mortality_hb_for_fitting_easr %>% 
+# 1797 rows removed (41% data) where easr = 0 or 1
+  filter(easr > 100) 
+
+
+mortality_predictions_above_100 <- mortality_hb_for_fitting_easr_above_100 %>% 
+  add_predictions(mortality_model) 
+
+rmse(mortality_predictions_above_100$easr, exp(mortality_predictions_above_100$pred))
+```
+
+Well thats a big numbers, spliting the data doesn't seem to help much
+
 
 
 
