@@ -17,6 +17,7 @@ library(GGally) # ggpairs
 library(modelr) # add_residuals and add_predictions
 library(ggfortify) # autoplot
 library(broom) # glance - for checking AIC, BIC of models
+library(glmulti)
 ```
 
 
@@ -941,5 +942,44 @@ predict(model_mort_10, mortality_2022_2034, interval = "predict")
 ```
 
 
+### glmulti
+
+```{r}
+mortality_glmulti <- mortality_hb_for_fitting_easr %>% 
+  mutate_if(is.character, as.factor)
+```
+
+```{r}
+glmulti_logged_exhaus_mort <- glmulti(
+  log(1 + easr) ~ ., 
+  data = mortality_glmulti,
+  level = 2, # 2 = include pairwise interactions, 1 = main effects only (main effect = no pairwise interactions)
+  minsize = 0, # no min size of model
+  maxsize = -1, # -1 = no max size of model
+  marginality = TRUE, # marginality here means the same as 'strongly hierarchical' interactions, i.e. include pairwise interactions only if both predictors present in the model as main effects.
+  method = "h", # h is exhaustive, g is genetic, l is fast exhaustive (needs leaps), 
+  # d is simple summary of candidate set printed
+  crit = bic, # criteria for model selection is BIC value (lower is better)
+  plotty = FALSE, # don't plot models as function runs
+  report = TRUE, # do produce reports as function runs
+  confsetsize = 100, # return best 100 solutions
+  fitfunction = lm # fit using the `lm` function
+)
+```
 
 
+
+```{r}
+optimal_mortality_model <- glmulti_logged_exhaus_mort@objects[[1]]
+
+summary(optimal_mortality_model)
+
+glance(optimal_mortality_model)
+```
+
+glmulti_model = log(easr) ~ hbr_name + age + sex + diagnosis + year +
+                            age : sex +
+                            age : diagnosis +
+                            sex : diagnosis
+                            
+                            

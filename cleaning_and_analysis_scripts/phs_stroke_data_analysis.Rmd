@@ -141,7 +141,7 @@ activity_hb %>%
   theme(legend.position = "none",
         # changes font size of faceted plot titles. 
         strip.text = element_text(size = 16, colour = "grey50")) +
-  labs(title = "Discharges by Age and CVD Type",
+  labs(title = "Discharges",
 #       subtitle = "10 year average",
        y = "Discharge Rate (EASR)",
        x = "Age")
@@ -240,7 +240,7 @@ mortality_hb %>%
   theme(legend.position = "none",
         # changes font size of faceted plot titles. 
         strip.text = element_text(size = 16, colour = "grey50")) +
-    labs(title = "Mortality by Age and CVD Type",
+    labs(title = "Mortality",
 #       subtitle = "10 year average",
         x = "Age", 
         y = "Mortality Rate (EASR)")
@@ -707,10 +707,6 @@ mortality_all_predictions %>%
 
 
 
-
-
-
-
 #### By Age
 
 ```{r}
@@ -733,7 +729,7 @@ mortality_all_predictions %>%
   facet_wrap(~diagnosis, scale = "free_y", nrow = 2)
 ```
 
-### By sex
+#### By sex
 
 ```{r}
 mortality_all_predictions %>% 
@@ -748,7 +744,7 @@ mortality_all_predictions %>%
 
 ```{r, message = FALSE}
 mortality_all_predictions %>% 
-  filter(hbr_name == "Ayrshire & Arran") %>% 
+  filter(hbr_name == "Tayside") %>% 
   group_by(year, real_or_pred, hbr_name) %>% 
   summarise(mean_easr = mean(easr)) %>% 
   ggplot(aes(year, mean_easr)) +
@@ -757,7 +753,53 @@ mortality_all_predictions %>%
                      labels = c("Predicted", "Real")) +
   theme_cc_project() +
     theme(legend.position = "none") +
-  labs(title = "Ayrshire & Arran",
+  labs(title = "Tayside",
+       y = "Mortality Rates (EASR) \n",
+       x = "Year")
+  
+mortality_all_predictions %>% 
+  filter(age == "over 75") %>% 
+  group_by(year, real_or_pred, age) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(year, mean_easr)) +
+  geom_point(aes(colour = real_or_pred), size = 3) +
+  scale_color_manual(values = c("#f084b6", "#999999"), 
+                     labels = c("Predicted", "Real")) +
+  theme_cc_project() +
+    theme(legend.position = "none") +
+  labs(title = "Over 75",
+       y = "Mortality Rates (EASR) \n",
+       x = "Year")
+
+mortality_all_predictions %>% 
+  filter(diagnosis == "Stroke") %>% 
+  group_by(year, real_or_pred, diagnosis) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(year, mean_easr)) +
+  geom_point(aes(colour = real_or_pred), size = 3) +
+  scale_color_manual(values = c("#f084b6", "#999999"), 
+                     labels = c("Predicted", "Real")) +
+  theme_cc_project() +
+    theme(legend.position = "none") +
+  labs(title = "Stroke",
+       y = "Mortality Rates (EASR) \n",
+       x = "Year")
+```
+
+#### "Bad Predictions
+
+```{r, message = FALSE}
+mortality_all_predictions %>% 
+  filter(hbr_name == "Grampian") %>% 
+  group_by(year, real_or_pred, hbr_name) %>% 
+  summarise(mean_easr = mean(easr)) %>% 
+  ggplot(aes(year, mean_easr)) +
+  geom_point(aes(colour = real_or_pred), size = 3) +
+  scale_color_manual(values = c("#f084b6", "#999999"), 
+                     labels = c("Predicted", "Real")) +
+  theme_cc_project() +
+    theme(legend.position = "none") +
+  labs(title = "Grampian",
        y = "Mortality Rates (EASR) \n",
        x = "Year")
   
@@ -775,67 +817,22 @@ mortality_all_predictions %>%
        y = "Mortality Rates (EASR) \n",
        x = "Year")
 
-mortality_all_predictions %>% 
-  filter(diagnosis == "Other CVD") %>% 
-  group_by(year, real_or_pred, diagnosis) %>% 
-  summarise(mean_easr = mean(easr)) %>% 
-  ggplot(aes(year, mean_easr)) +
-  geom_point(aes(colour = real_or_pred), size = 3) +
-  scale_color_manual(values = c("#f084b6", "#999999"), 
-                     labels = c("Predicted", "Real")) +
-  theme_cc_project() +
-    theme(legend.position = "none") +
-  labs(title = "Other CVD",
-       y = "Mortality Rates (EASR) \n",
-       x = "Year")
 ```
 
-#### "Bad Predictions
 
-```{r, message = FALSE}
-mortality_all_predictions %>% 
-  filter(hbr_name == "Greater Glasgow & Clyde") %>% 
-  group_by(year, real_or_pred, hbr_name) %>% 
-  summarise(mean_easr = mean(easr)) %>% 
-  ggplot(aes(year, mean_easr)) +
-  geom_point(aes(colour = real_or_pred), size = 3) +
-  scale_color_manual(values = c("#f084b6", "#999999"), 
-                     labels = c("Predicted", "Real")) +
-  theme_cc_project() +
-    theme(legend.position = "none") +
-  labs(title = "Greater Glasgow & Clyde",
-       y = "Mortality Rates (EASR) \n",
-       x = "Year")
-  
-mortality_all_predictions %>% 
-  filter(age == "over 75") %>% 
-  group_by(year, real_or_pred, age) %>% 
-  summarise(mean_easr = mean(easr)) %>% 
-  ggplot(aes(year, mean_easr)) +
-  geom_point(aes(colour = real_or_pred), size = 3) +
-  scale_color_manual(values = c("#f084b6", "#999999"), 
-                     labels = c("Predicted", "Real")) +
-  theme_cc_project() +
-    theme(legend.position = "none") +
-  labs(title = "Age Over 75",
-       y = "Mortality Rates (EASR) \n",
-       x = "Year")
 
-mortality_all_predictions %>% 
-  filter(diagnosis == "Stroke") %>% 
-  group_by(year, real_or_pred, diagnosis) %>% 
+#### RMSE
+
+Website saying that you need to divide rmse by the mean of the predicted value (not sure if its the original data or predicted?)
+
+```{r}
+# RMSE for model 11 (mortality model) is 0.849
+RMSE <- 0.849
+
+mortality_hb_for_fitting_easr %>% 
   summarise(mean_easr = mean(easr)) %>% 
-  ggplot(aes(year, mean_easr)) +
-  geom_point(aes(colour = real_or_pred), size = 3) +
-  scale_color_manual(values = c("#f084b6", "#999999"), 
-                     labels = c("Predicted", "Real")) +
-  theme_cc_project() +
-  theme(legend.position = "none") +
-  labs(title = "Stroke",
-       y = "Mortality Rates (EASR) \n",
-       x = "Year")
+  summarise(result = RMSE / mean_easr * 100)
 ```
-
 
 
 
