@@ -475,7 +475,7 @@ mortality_hb_islands %>%
         panel.grid.minor = element_line(colour = "grey50", linetype = "dotted"),
         ) +
   labs(x = "Year",
-        y = "EASR") #+
+        y = "Mortality Rate (EASR)") #+
   #scale_y_continuous(minor_breaks = seq(0, 900, 25))
 ```
 
@@ -631,7 +631,7 @@ ggplot(aes(easr, exp(pred))) +
   geom_abline(colour = "#f084b6", linewidth = 1) +
   theme_cc_project() +
   labs(x = "Real Mortality Rate",
-       y = "Predicted Moralilty Rate \n") + 
+       y = "Predicted Mortalilty Rate \n") + 
    scale_y_continuous(expand = c(0,0)) +
   scale_x_continuous(expand = c(0,0), limits = c(0, 1300), 
                      breaks = c(200, 400, 600, 800, 1000, 1200))
@@ -644,7 +644,7 @@ ggplot(aes(easr, exp(pred))) +
   geom_abline(colour = "#f084b6", linewidth = 1) +
   theme_cc_project() +
   labs(x = "Real Mortality Rate",
-       y = "Predicted Moralilty Rate \n") + 
+       y = "Predicted Mortalilty Rate \n") + 
    scale_y_continuous(expand = c(0,0), limits = c(0, 100)) +
   scale_x_continuous(expand = c(0,0), limits = c(0, 100))
 
@@ -657,9 +657,126 @@ ggplot(aes(easr, exp(pred))) +
   theme_cc_project() +
   labs(title = "black lines are +/- 20% of real mortality rate",
     x = "Real Mortality Rate",
-       y = "Predicted Moralilty Rate \n") #+ 
+       y = "Predicted Mortalilty Rate \n") #+ 
  #  scale_y_continuous(expand = c(0,0), limits = c(0, 25)) +
  # scale_x_continuous(expand = c(0,0), limits = c(0, 25))
+```
+
+#### By Health Board
+
+```{r}
+mortality_predictions_2009_2021 <- mortality_hb_for_fitting_easr %>% 
+  add_predictions(mortality_model) 
+
+mortality_predictions_2009_2021 %>% 
+ggplot(aes(easr, exp(pred))) +
+  geom_point(colour = "#999999", alpha = 0.5) +
+  geom_abline(colour = "#f084b6", linewidth = 0.5) +
+#  theme_cc_project() +
+  labs(x = "Real Mortality Rate",
+       y = "Predicted Mortalilty Rate \n") + 
+   scale_y_continuous(expand = c(0,0)) +
+  scale_x_continuous(expand = c(0,0), limits = c(0, 1300), 
+                     breaks = c(200, 400, 600, 800, 1000, 1200)) +
+  facet_wrap(~hbr_name) 
+
+mortality_predictions_2009_2021 %>% 
+ggplot(aes(easr, exp(pred))) +
+  geom_point(colour = "#999999", alpha = 0.5) +
+  geom_abline(colour = "#f084b6", linewidth = 1) +
+#  theme_cc_project() +
+  labs(x = "Real Mortality Rate",
+       y = "Predicted Mortalilty Rate \n") + 
+   scale_y_continuous(expand = c(0,0), limits = c(0, 100)) +
+  scale_x_continuous(expand = c(0,0), limits = c(0, 100)) +
+  facet_wrap(~hbr_name) 
+```
+
+#### By Age
+
+```{r}
+mortality_predictions_2009_2021 <- mortality_hb_for_fitting_easr %>% 
+  add_predictions(mortality_model) 
+
+mortality_predictions_2009_2021 %>% 
+ggplot(aes(easr, exp(pred))) +
+  geom_point(colour = "#999999", alpha = 0.5) +
+  geom_abline(colour = "#f084b6", linewidth = 0.5) +
+#  theme_cc_project() +
+  labs(x = "Real Mortality Rate",
+       y = "Predicted Mortalilty Rate \n") + 
+   scale_y_continuous(expand = c(0,0)) +
+  scale_x_continuous(expand = c(0,0)) +
+  facet_wrap(~age, scale = "free") 
+
+mortality_predictions_2009_2021 %>% 
+ggplot(aes(easr, exp(pred))) +
+  geom_point(colour = "#999999", alpha = 0.5) +
+  geom_abline(colour = "#f084b6", linewidth = 1) +
+#  theme_cc_project() +
+  labs(x = "Real Mortality Rate",
+       y = "Predicted Mortalilty Rate \n") + 
+   scale_y_continuous(expand = c(0,0), limits = c(0, 100)) +
+  scale_x_continuous(expand = c(0,0), limits = c(0, 100)) +
+  facet_wrap(~age) 
+```
+
+#### By diagnosis
+
+```{r}
+mortality_predictions_2009_2021 <- mortality_hb_for_fitting_easr %>% 
+  add_predictions(mortality_model) 
+
+mortality_predictions_2009_2021 %>% 
+ggplot(aes(easr, exp(pred))) +
+  geom_point(colour = "#999999", alpha = 0.5) +
+  geom_abline(colour = "#f084b6", linewidth = 0.5) +
+#  theme_cc_project() +
+  labs(x = "Real Mortality Rate",
+       y = "Predicted Mortalilty Rate \n") + 
+   scale_y_continuous(expand = c(0,0)) +
+  scale_x_continuous(expand = c(0,0)) +
+  facet_wrap(~diagnosis, scale = "free") 
+
+mortality_predictions_2009_2021 %>% 
+ggplot(aes(easr, exp(pred))) +
+  geom_point(colour = "#999999", alpha = 0.5) +
+  geom_abline(colour = "#f084b6", linewidth = 1) +
+#  theme_cc_project() +
+  labs(x = "Real Mortality Rate",
+       y = "Predicted Mortalilty Rate \n") + 
+   scale_y_continuous(expand = c(0,0), limits = c(0, 100)) +
+  scale_x_continuous(expand = c(0,0), limits = c(0, 100)) +
+  facet_wrap(~diagnosis) 
+```
+
+#### By sex
+
+```{r}
+mortality_predictions_2009_2021 <- mortality_hb_for_fitting_easr %>% 
+  add_predictions(mortality_model) 
+
+mortality_predictions_2009_2021 %>% 
+ggplot(aes(easr, exp(pred))) +
+  geom_point(colour = "#999999", alpha = 0.5) +
+  geom_abline(colour = "#f084b6", linewidth = 0.5) +
+#  theme_cc_project() +
+  labs(x = "Real Mortality Rate",
+       y = "Predicted Mortalilty Rate \n") + 
+   scale_y_continuous(expand = c(0,0)) +
+  scale_x_continuous(expand = c(0,0)) +
+  facet_wrap(~sex, scale = "free") 
+
+mortality_predictions_2009_2021 %>% 
+ggplot(aes(easr, exp(pred))) +
+  geom_point(colour = "#999999", alpha = 0.5) +
+  geom_abline(colour = "#f084b6", linewidth = 1) +
+#  theme_cc_project() +
+  labs(x = "Real Mortality Rate",
+       y = "Predicted Mortalilty Rate \n") + 
+   scale_y_continuous(expand = c(0,0), limits = c(0, 100)) +
+  scale_x_continuous(expand = c(0,0), limits = c(0, 100)) +
+  facet_wrap(~sex) 
 ```
 
 
