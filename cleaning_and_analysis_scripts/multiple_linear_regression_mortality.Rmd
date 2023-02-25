@@ -982,4 +982,140 @@ glmulti_model = log(easr) ~ hbr_name + age + sex + diagnosis + year +
                             age : diagnosis +
                             sex : diagnosis
                             
+     
+     
+## Test Train Split
+
+
+```{r}
+# Count how many total rows there are in our data
+n_data <- nrow(mortality_hb_for_fitting_easr)
+
+# Make a test index
+test_index <- sample(1:n_data, size = n_data*0.2)
+
+# Use the test index to create test and training datasets
+test  <- slice(mortality_hb_for_fitting_easr, test_index)
+train <- slice(mortality_hb_for_fitting_easr, -test_index)
+
+model <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age  + diagnosis:sex+ age:sex + age:hbr_name +
+                     diagnosis:age:sex + year:age + year:sex + year:hbr_name + 
+                     year:diagnosis, 
+                      data = train)
+
+predictions_test <- test %>%
+  add_predictions(model) %>%
+  select(easr, pred)
+
+predictions_train <- train %>%
+  add_predictions(model) %>%
+  select(easr, pred)
+
+```
+
+Now we can calculate the mean squared error, just by taking the average of the squares of the differences between the predictions and the actual values.     
+     
+```{r}
+mse_test <- mean((predictions_test$pred - test$easr)**2)
+mse_test
+
+sqrt(mse_test)
+
+
+mse_train <- mean((predictions_train$pred - train$easr)**2)
+mse_train
+
+sqrt(mse_train)
+
+```
+     
+
+```{r}
+summary(model)
+
+model_test_set <- lm(log(1 + easr) ~ age + diagnosis + hbr_name + year + sex +
+                   diagnosis:age  + diagnosis:sex+ age:sex + age:hbr_name +
+                     diagnosis:age:sex + year:age + year:sex + year:hbr_name + 
+                     year:diagnosis, 
+                      data = test)
+
+summary(model_test_set)
+
+glance(model)
+
+glance(model_test_set)
+
+```
+
+### Plot of test - real vs predicted
+
+```{r}
+predictions_test <- test %>%
+  add_predictions(model)
+
+
+predictions_test_islands <- predictions_test %>% 
+  filter(hbr_name %in% c("Orkney", "Shetland", "Western Isles"))
+
+
+
+predictions_test %>% 
+ggplot(aes(easr, exp(pred))) +
+  geom_point(colour = "#999999", alpha = 0.5) +
+  geom_abline(colour = "#f084b6", linewidth = 1) +
+  geom_point(data = predictions_test_islands, mapping = aes(easr, exp(pred))) +
+  theme_cc_project() +
+  labs(x = "Real Mortality Rate",
+       y = "Predicted Mortalilty Rate \n") + 
+   
+  scale_y_continuous(expand = c(0,0), limits = c(0, 820),
+                     breaks = c(200, 400, 600, 800)) +
+  
+  scale_x_continuous(expand = c(0,0), limits = c(0, 1050), 
+                     breaks = c(200, 400, 600, 800, 1000))
+
+
+predictions_test %>% 
+ggplot(aes(easr, exp(pred))) +
+  geom_point(colour = "#999999", alpha = 0.5) +
+  geom_abline(colour = "#f084b6", linewidth = 1) +
+  geom_point(data = predictions_test_islands, mapping = aes(easr, exp(pred)),
+             colour = "red") +
+  theme_cc_project() +
+  labs(x = "Real Mortality Rate",
+       y = "Predicted Mortalilty Rate \n") + 
+   
+  scale_y_continuous(expand = c(0,0), limits = c(0, 820),
+                     breaks = c(200, 400, 600, 800)) +
+  
+  scale_x_continuous(expand = c(0,0), limits = c(0, 1050), 
+                     breaks = c(200, 400, 600, 800, 1000))
+
+
+
+
+predictions_test %>% 
+ggplot(aes(easr, exp(pred))) +
+  geom_point(colour = "#999999", alpha = 0.5) +
+  geom_abline(colour = "#f084b6", linewidth = 1) +
+  theme_cc_project() +
+  labs(x = "Real Mortality Rate",
+       y = "Predicted Mortalilty Rate \n") + 
+   scale_y_continuous(expand = c(0,0), limits = c(0, 100), breaks = c(20, 40, 60, 80, 100)) +
+  scale_x_continuous(expand = c(0,0), limits = c(0, 100), 
+                     breaks = c(20, 40, 60, 80, 100))
+
+
+```
+
+```{r}
+mortality_hb_for_fitting_easr %>% 
+#    filter(easr > 1000) %>% 
+  filter(hbr_name == "Shetland") %>% 
+  filter(diagnosis == "Stroke")
+
+
+```
+                            
                             
