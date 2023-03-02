@@ -1,5 +1,5 @@
 ---
-title: "Final Projet - PDA Report"
+title: "PDA Report - Cerebrovascular Disease in Scotland"
 output:
   html_document:
     toc: yes
@@ -10,49 +10,153 @@ output:
 ---
 
 ## Context
-### Business intelligence and data-driven decision making
-What insights can the business/organisation gain from your analysis and how will your analysis help the business/organisation make better decisions?
 
 ### Domain knowledge and the business context
-Briefly describe the business/organisation and where your analysis fits within its aims/activity.
+
+NHS Scotland treats thousands of patients for cerebrovascular disease (CVD) every year. It is still one of the top causes of death in Scotland despite the mortality rate decreasing substantially over the last decade, therefore treating and preventing CVD is a clinical priority for NHS Scotland. 
+
+Knowledge of how different demographics are affected by the different types of CVD are required to understand how best to treat and prevent the disease. Prediction of future incidence / dishcarge / mortality rates will allow the allocation of appropriate resources. 
+
+The business was asked to clarify the wording of the brief as it asks the analyst to determine the most common type of stroke. The answer to this is - "stroke" and is therefore slightly confusing. During reporting the term cerebrovascular disease was used to encompase all the categories of which stroke was just one. 
+
+Background reading was carried out to increase knowledge of cerebrovascular disease and specifically its impact on the Scottish population. Information was sourced from scientific journals, the British Heart Foundation and annual reports on CVD published by Public Health Scotland. 
+
+
+### Business intelligence and data-driven decision making
+
+Data on CVD discharges and mortality was used to determine what age range and sex were most affected by the different types of CVD. There are different categories of CVD, such as stroke, mini-stroke and subarachnoid haemorrhage and they each carry different levels of mortality and treatment requirements. Understanding what sections of the population are most affected by each type of CVD may allow quicker diagnosis and more appropriate treatment plans to be put in place. 
+
+The data was also analysed in a geospatial context to determine which health boards and council areas had the highest rates of dicharges and mortalities, this may allow appropriate resources to be deployed to the areas of the country most in need of them. 
+
+The trend for discharges over the past 13 years (which was the time period data was available for) was found to increase in some health boards but decrease in others. The trend for mortality was decreasing in every health board but the decrease rate was much faster in some areas. It is possible that future predictions of discharge and mortality rates could be used to target high incidence areas with more preventative measures. 
+
 
 ## Data
 ### Internal and external data sources
-Briefly describe your data sources and which were internal (provided by the organisation) and external (not sourced from the organisation’s data)
+
+#### Internal data sources (from Public Health Scotland):
+
+Mortality by health board   
+Mortality by council area  
+
+Discharges by health board   
+Discharges by council area
+
+Scottish health board populations  
+Scottish council area populations
+
+
+#### External data sources (from Scottish Government *data.gov.uk*):
+
+Scottish health board shapefile  
+Scottish council area shapefile
+
 
 ### Types of data
-What kind of data did you work with? E.g. categorical and numerical data and their sub-types.
+
+The discharge and mortality data contained character and numeric variables. The numeric variables were all of the class double. 
+
+In some instances the diagnosis character variable which contained the types of CVD (e.g. TIA, subarachnoid haemorrhage) was converted to an ordered factor but this was only to display data in a consistent format in plots. 
+
 
 ### Data formats
-What format did your data come in? E.g. all downloaded flat files (CSV) or any data from APIs, scraping etc.
+
+The mortality, discharge and population data were .csv files. 
+
+Incidence data was sourced from .xlsx files.
+
+The health board and council area shapefiles were .shp files and came with the required .dbf, and .shx files. The shapefile contains the geometries. The .dbf file contains factual data or attribute data in dBASE format. The .shx file links the factual data from the .dbf file with the geometry in the shapefile. 
+
 
 ### Data quality and bias
-Briefly describe the quality of the data and whether you have any reasons to suggest the data is biased e.g. only data from a specific demographic even though a broader demographic would be of interest to the organisation.
+
+#### Missing Data
+
+The mortality and discharge datasets have missing data. This data has been removed and marked as confidential because the numbers are so low they may allow identification of individuals. There are 3739 rows of data with missing data and they all relate to Orkney, Shetland and the Western Isles. These are the smallest health boards and some of the demographics will not consist of many people. The missing data was dealt with by converting all the NAs to zero. The numbers are clearly very low and so this is not likely to significantly affect further analysis and conclusions. 
+
+
+#### Data Quality
+
+The datasets were of high quality. There was no missing data apart from that missing for confidentiality reason as described above. No inaccuracies in the data were identified. 
+
+
+#### Data Bias
+
+The age ranges used to categorise the data were:
+0 - 44, 45 - 64, 65 - 75 and over 75.
+Narrower age ranges may have allowed more detailed analysis of the effects of the CVD on people of different ages but for these purposes the age ranges used were deemed appropriate. 
+
+No evidence of data bias was found when working with the datasets.
+
 
 ## Ethics
 ### Ethical issues in data sourcing and extraction
-Do you have any ethical concerns regarding the sourcing and extraction of your data?
 
-Some of the data is labelled "c" which means the data can't be presented as it could result in identification of a single respondent. This was discussed in group project
+The Public Health Scotland data is all freely available online, as are the geospatial files sourced from the Scottish Government website; there are therefore no ethical concerns with the sourcing or extraction of the data. 
+
+The datasets are covered by the Open Government License: http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/ In summary this means the data can be copied, published, transmitted, adapted and even exploited commercially or non-commercially but the source of the information must be acknowledged.
+
+The discharge and mortality datasets had flags for confidentiality, meaning that values for number of discharges and numbers of deaths were low enough that is may be possible to identify individuals. For this analysis these values were converted to zero.  
 
 ### Ethical implications of business requirements
-Are there any ethical implications of the business requirements?
+
+Ethical issues may arise if the conclusions from this analysis are used to target resources in a way which adversely affects an area. For instance if resources were reallocated from somewhere with low incidence of CVD to a high incidence area then the people in the low incidence area who do suffer a CVD episode may not receive the same level of care. 
+
 
 ## Analysis
 ### Stages in the data analysis process
-What were the main stages in your data analysis process?
+
+#### 1. Initial exploratory data analysis was conducted before cleaning 
+
+This involved loading the discharge and activity .csv files and using skim and glimpse to determine the structure of the datasets, the class of the variables, the completeness and basic statistics. The missing data was investigated to determine if it was missing at random or related to specific categories. 
+
+The unique values in each of the character variables were identified to help understand the data and what analysis may be possible. 
+
+#### 2. Cleaning
+
+A cleaning script was created to clean the discharge and mortality datasets. There were four datasets in total as there was discharge and mortality data by health board and council area. 
+
+The main step involved:  
+- combining the 10 years of data (2009 - 2018) provided by the business with the most recent data available (2019 - 2021)  
+- recoding health boards (as some health boards changed their codes)  
+- standardising cell entries e.g. (Males -> Male)  
+- creating an "Other CVD" category so that the values for the subcategories added up to the "All CVD" total  
+- adding health board (or council area) names to datasets  
+
+#### 3. EDA after cleaning
+
+Further exploratory data analysis was conducted after cleaning to further understand the data. 
+
+#### 4. Answering business questions
+
+The questions asked by the business were investigated by analysing the relevant data, drawing conclusions and creating appropriate graphs to communicate the findings. 
+
+One of the business questions asked whether it was possible to predict future discharges and/or mortality rates. This was a large part of the project and different methods, such as multiple linear regression, random forests and ARIMA were investigated. Multiple linear regression was chosen as the best method and a machine learning model was built. The model was tested and used to predict future rates. 
+
+#### 5. Communicating results
+
+A presentation was created in Microsoft Powerpoint to answer the business questions and address key findings from the analysis. 
 
 ### Tools for data analysis
 What were the main tools you used for your analysis?
+- R programming language  
+- R Studio  
+- R packages: tidyverse, janitor, broom, sf, modelr, fable, performance, tsibble, tsibbledata, readxl, ggplot2, leaflet, here, purr, R Shiny, htmlwidgets, GGally, ggfortify, glmutli, ggpubr, plotly, relaimpo, urca, lubridate, ranger, skimr  
+- Github  
+- Miro  
+- Microsoft Excel  
+- Microsoft Powerpoint  
+- Google Chrome  
 
 ### Descriptive, diagnostic, predictive and prescriptive analysis
 Please report under which of the below categories your analysis falls and why (can be more than one)
 
-Descriptive Analytics tells you what happened in the past.
+Analysis of the cerebrovascular disease data from 2009 to 2021 falls into the category of **descriptive analytics** as the information being reported relates to what has happened in the past e.g. a specific number of males aged over 75 died in NHS Grampian of stroke in 2015. 
 
-Diagnostic Analytics helps you understand why something happened in the past.
+The multiple linear regression model was designed to predict the rates of discharge and mortality after 2021; it relates to what is most likely to happen in the future and is therefore **predictive analytics**.
 
-Predictive Analytics predicts what is most likely to happen in the future.
 
-Prescriptive Analytics recommends actions you can take to affect those outcomes.
+
+
+
 
