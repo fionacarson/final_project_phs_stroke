@@ -36,20 +36,20 @@ The trend for discharges over the past 13 years (which was the time period data 
 
 #### Internal data sources (from Public Health Scotland):
 
-Mortality by health board   
-Mortality by council area  
+Mortality by health board (8100 observations of 13 variables)   
+Mortality by council area (17820 observations of 13 variables) 
 
-Discharges by health board   
-Discharges by council area
+Discharges by health board (43200 observations of 15 variables)  
+Discharges by council area (95040 observations of 15 variables)
 
-Scottish health board populations  
-Scottish council area populations
+Scottish health board populations (14 observations of 4 variables)  
+Scottish council area populations (126126 observations of 5 variables)
 
 
 #### External data sources (from Scottish Government *data.gov.uk*):
 
-Scottish health board shapefile  
-Scottish council area shapefile
+Scottish health board shapefile (14 observations of 5 variables)  
+Scottish council area shapefile (32 observations of 4 variables)
 
 
 ### Types of data
@@ -138,7 +138,7 @@ One of the business questions asked whether it was possible to predict future di
 A presentation was created in Microsoft Powerpoint to answer the business questions and address key findings from the analysis. 
 
 ### Tools for data analysis
-What were the main tools you used for your analysis?
+
 - R programming language  
 - R Studio  
 - R packages: tidyverse, janitor, broom, sf, modelr, fable, performance, tsibble, tsibbledata, readxl, ggplot2, leaflet, here, purr, R Shiny, htmlwidgets, GGally, ggfortify, glmutli, ggpubr, plotly, relaimpo, urca, lubridate, ranger, skimr  
@@ -149,7 +149,6 @@ What were the main tools you used for your analysis?
 - Google Chrome  
 
 ### Descriptive, diagnostic, predictive and prescriptive analysis
-Please report under which of the below categories your analysis falls and why (can be more than one)
 
 Analysis of the cerebrovascular disease data from 2009 to 2021 falls into the category of **descriptive analytics** as the information being reported relates to what has happened in the past e.g. a specific number of males aged over 75 died in NHS Grampian of stroke in 2015. 
 
