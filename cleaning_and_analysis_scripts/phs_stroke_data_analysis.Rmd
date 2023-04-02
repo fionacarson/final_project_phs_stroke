@@ -70,7 +70,7 @@ activity_hb %>%
   theme_cc_project() +
   theme(axis.title.y = element_blank()) +
   labs(title = "Discharges",
-       subtitle = "10 year average", 
+ #      subtitle = "10 year average", 
        y = "Annual Number of Discharges") +
   coord_flip() +
   # code to wrap text so it goes over two lines
@@ -97,7 +97,7 @@ mortality_hb %>%
   theme_cc_project() +
     theme(axis.title.y = element_blank()) +
   labs(title = "Mortality",
-       subtitle = "10 year average", 
+ #      subtitle = "10 year average", 
        y = "Annual Number of Deaths") +
   coord_flip() +
   scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) 
@@ -209,7 +209,7 @@ mortality_hb %>%
          diagnosis == "Cerebrovascular Disease") %>% 
   ggplot(aes(year, easr)) +
   geom_point() +
-  theme_fc() #+
+  theme_cc_project() #+
  # scale_y_continuous(limits = c(2000, 5000))
 ```
 

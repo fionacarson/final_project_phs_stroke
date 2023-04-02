@@ -222,7 +222,7 @@ council_sf <- st_read(here::here("map_files/council_shapefile_scotland/pub_las.s
 council_sf <- st_transform(council_sf, "+proj=longlat +ellps=WGS84 +datum=WGS84")
 
 council_sf_simplified <- rmapshaper::ms_simplify(input = council_sf,
-                                           keep = 0.001,
+                                           keep = 0.01,
                                            keep_shapes = TRUE)
 
 rm(council_sf)

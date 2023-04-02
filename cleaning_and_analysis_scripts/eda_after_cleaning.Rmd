@@ -21,6 +21,8 @@ activity_hb <- read_csv(here("clean_data/activity_hb.csv"))
 mortality_hb <- read_csv(here("clean_data/mortality_hb.csv")) 
 
 activity_ca <- read_csv(here("clean_data/activity_ca.csv")) 
+
+mortality_ca <- read_csv(here("clean_data/mortality_ca.csv")) 
 ```
 
 ```{r}
@@ -626,6 +628,27 @@ Mortality is going down everywhere - not very interesting. What is happening at 
 
 
 ```{r}
+mortality_ca %>% 
+  filter(ca_name != "Scotland",
+         sex == "All",
+         age == "All", 
+         diagnosis == "Cerebrovascular Disease") %>% 
+  ggplot(aes(year, easr)) +
+  geom_point(aes(colour = ca_name)) +
+  geom_smooth(method = lm, colour = "black", linewidth = 0.4, se = FALSE) +
+  facet_wrap(~ca_name) +  
+#  stat_regline_equation(aes(label = paste(..eq.label.., ..rr.label.., 
+#                                        sep = "~~~~"))) +
+# plots were coloured according to whether they changed by over or under 100 over the 13 year period
+#      scale_colour_manual(values = c("#6d95bf", "grey30", "#f084b6", "grey30","#6d95bf", #"#f084b6", "#6d95bf", "grey30","grey30", "#6d95bf", "#f084b6", "grey30")) +
+#  theme_fc() +
+    theme(legend.position = "none",
+        # changes font size of faceted plot titles. 
+        strip.text = element_text(size = 10, colour = "grey30"),
+        axis.text.y = element_text(size = 8))
+
+
+
 mortality_ca %>% 
   filter(ca_name != "Scotland",
          sex == "All",
